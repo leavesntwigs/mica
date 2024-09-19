@@ -45,6 +45,9 @@ def get_sweeps(datatree):
 # get the number of sweeps from a datatree ...
     return len(datatree.groups) - 1
 
+file_selector_widget = pn.widgets.FileSelector('~/data')
+
+card = pn.Card(file_selector_widget, title='Step 1. Choose Data File', styles={'background': 'WhiteSmoke'})
 
 x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
@@ -61,6 +64,7 @@ def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
 my_column = pn.Column(
+    card,
     x,
     field_names_widget,
     background,
