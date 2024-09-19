@@ -3,27 +3,48 @@
 
 import panel as pn
 
-#def get_field_names:
-#    return ['A', 'B', 'C']
+import numpy as np
+import pandas as pd
+import panel as pn
+import hvplot.pandas
+import xarray as xr
+import xradar as xd
+#import cmweather
+#import matplotlib.pyplot as plt
+#import pyproj
+#import cartopy
+import hvplot.xarray
 
-#def get_field_names:  # (datatree):
+# NEXRAD
+path = "/Users/brenda/data/for_mica/nexrad/"
+filename = "KBBX20240510_010615_V06"
+datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+
+
+
+
+
+def get_field_names(dummy):
+    return ['A', 'B', 'C']
+
+def get_field_names(datatree):
 # get field variables from a datatree ...
-#    sweep0 = datatree["/sweep_0"] # TODO make this more general and robust
-#    #print("dims: ", sweep0.dims)
-#    #print("data_vars: ", sweep0.data_vars)
-#    sweep0_data_vars = sweep0.data_vars
-#    fieldnames = []
-#    for k, v in sweep0_data_vars.items():
-#        #print(k, len(v.dims))
-#        if len(v.dims) >= 2:
-#            fieldnames.append(k)
-#    return fieldnames
+    sweep0 = datatree["/sweep_0"] # TODO make this more general and robust
+    #print("dims: ", sweep0.dims)
+    #print("data_vars: ", sweep0.data_vars)
+    sweep0_data_vars = sweep0.data_vars
+    fieldnames = []
+    for k, v in sweep0_data_vars.items():
+        #print(k, len(v.dims))
+        if len(v.dims) >= 2:
+            fieldnames.append(k)
+    return fieldnames
 #    return ['A', 'B', 'C']
 
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
-field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
-# field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
+# field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
+field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
 
 def square(x):
     return f'{x} squared is {x**2}'
