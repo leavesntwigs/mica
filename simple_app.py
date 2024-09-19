@@ -41,7 +41,7 @@ def get_field_names(datatree):
     return fieldnames
 #    return ['A', 'B', 'C']
 
-x = pn.widgets.IntSlider(name='x', start=0, end=100)
+x = pn.widgets.IntSlider(name='sweep', start=0, end=100)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
 # field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
 field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
@@ -49,17 +49,18 @@ field_names_widget = pn.widgets.Select(name="field", options=get_field_names(dat
 def square(x):
     return f'{x} squared is {x**2}'
 
-def show_selected_field(x):
-    return f'selected field is {x}'
+def show_selected_field(field, x):
+    return f'selected field is {field} sweep is {x}'
 
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
 my_column = pn.Column(
+    x,
     field_names_widget,
     background,
     # pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
-    pn.pane.Markdown(pn.bind(show_selected_field, field_names_widget), styles=pn.bind(styles, background))
+    pn.pane.Markdown(pn.bind(show_selected_field, field_names_widget, x), styles=pn.bind(styles, background))
 )
 
 # make this into a stand alone app
