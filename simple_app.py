@@ -41,7 +41,12 @@ def get_field_names(datatree):
     return fieldnames
 #    return ['A', 'B', 'C']
 
-x = pn.widgets.IntSlider(name='sweep', start=0, end=100)
+def get_sweeps(datatree):
+# get the number of sweeps from a datatree ...
+    return len(datatree.groups) - 1
+
+
+x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
 # field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
 field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
