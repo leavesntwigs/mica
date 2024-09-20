@@ -53,6 +53,7 @@ x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
 # field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
 field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
+open_file_widget = pn.widgets.Button(name="open/read file?", button_type='primary')
 
 def square(x):
     return f'{x} squared is {x**2}'
@@ -60,11 +61,16 @@ def square(x):
 def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
 
+def show_selected_file(file_name):
+    return f'selected file is {file_name}'
+
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
 my_column = pn.Column(
     card,
+    pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
+    open_file_widget,
     x,
     field_names_widget,
     background,
@@ -74,7 +80,7 @@ my_column = pn.Column(
 
 # make this into a stand alone app
 pn.template.MaterialTemplate(
-    site="Panel",
+    site="MICA",
     title="Getting Started App",
     #sidebar=[field_names_widget],
     #main=[card]
