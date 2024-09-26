@@ -71,11 +71,22 @@ def square(x):
 def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
 
+# use with pn.pane.Markdown
+#def show_selected_file(file_name):
+#    if len(file_name) <= 0:
+#        return f'Select a file to open'
+#    else:
+#        return f'You selected {file_name}'
+    
+
+# use with pn.pane.HoloViews
 def show_selected_file(file_name):
-    if len(file_name) <= 0:
-        return f'Select a file to open'
-    else:
-        return f'You selected {file_name}'
+#    if len(file_name) <= 0:
+#        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
+#    else:
+    return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
+        # return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
+
 
 def show_status_open_file(dummy=1):
     return f'reading ...'
@@ -90,19 +101,20 @@ xvals = np.linspace(-4, 0, 100)
 yvals = np.linspace(4, 0, 100)
 xs, ys = np.meshgrid(xvals, yvals)
 
-def waves_image(alpha, beta):
+def waves_image(alpha, beta, field, dtree=3):
     return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
 
-dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta'])
+dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 
 #-----
 
 my_column = pn.Column(
     # waves_image(1,0),
     # dmap[1,2] + dmap.select(alpha=1, beta=2),
-    dmap.redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5]),
+    dmap.redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO']),
     card,
-    pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
+    # pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
+    pn.pane.HoloViews(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
     open_file_widget,
     pn.pane.Markdown(pn.bind(show_status_open_file, open_file_widget)),
     x,
