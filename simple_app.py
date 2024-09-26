@@ -114,7 +114,7 @@ my_column = pn.Column(
     dmap.redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO']),
     card,
     # pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
-    pn.pane.HoloViews(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
+    pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='bokeh'), # , styles=pn.bind(styles, background))
     open_file_widget,
     pn.pane.Markdown(pn.bind(show_status_open_file, open_file_widget)),
     x,
