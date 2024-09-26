@@ -1,9 +1,8 @@
 
 
 
-import panel as pn
-
 import numpy as np
+import holoviews as hv
 import pandas as pd
 import panel as pn
 import hvplot.pandas
@@ -15,14 +14,25 @@ import xradar as xd
 #import cartopy
 import hvplot.xarray
 
+from holoviews import opts
+hv.extension('matplotlib')
+
 # NEXRAD
 path = "/Users/brenda/data/for_mica/nexrad/"
 filename = "KBBX20240510_010615_V06"
 datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
 
+# TODO: set default datatree and default filename, so that widgets display null
+# at initial start up or on error?
+# When file is chosen/changed, the other widgets update? because 
+# all datatree arguments are replaced with get_datatree(filename)
+# and filename is replaced with a function get_filename, which is bound to 
+# select file_selector_widget? is that how it all flows through the pipes?
 
-
-
+def get_datatree(file_full_path):
+    new_datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_full_path)
+    return new_datatree
+    
 
 def get_field_names(dummy):
     return ['A', 'B', 'C']
@@ -62,15 +72,39 @@ def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
 
 def show_selected_file(file_name):
-    return f'selected file is {file_name}'
+    if len(file_name) <= 0:
+        return f'Select a file to open'
+    else:
+        return f'You selected {file_name}'
+
+def show_status_open_file(dummy=1):
+    return f'reading ...'
 
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
+#------
+# from DynamicMap tutorial ...
+
+xvals = np.linspace(-4, 0, 100)
+yvals = np.linspace(4, 0, 100)
+xs, ys = np.meshgrid(xvals, yvals)
+
+def waves_image(alpha, beta):
+    return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
+
+dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta'])
+
+#-----
+
 my_column = pn.Column(
+    # waves_image(1,0),
+    # dmap[1,2] + dmap.select(alpha=1, beta=2),
+    dmap.redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5]),
     card,
     pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
     open_file_widget,
+    pn.pane.Markdown(pn.bind(show_status_open_file, open_file_widget)),
     x,
     field_names_widget,
     background,
