@@ -18,9 +18,9 @@ from holoviews import opts
 hv.extension('matplotlib')
 
 # NEXRAD
-path = "/Users/brenda/data/for_mica/nexrad/"
-filename = "KBBX20240510_010615_V06"
-datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+#path = "/Users/brenda/data/for_mica/nexrad/"
+#filename = "KBBX20240510_010615_V06"
+#datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
 
 # TODO: set default datatree and default filename, so that widgets display null
 # at initial start up or on error?
@@ -59,9 +59,9 @@ file_selector_widget = pn.widgets.FileSelector('~/data')
 
 card = pn.Card(file_selector_widget, title='Step 1. Choose Data File', styles={'background': 'WhiteSmoke'})
 
-x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
+# x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
-field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
+# field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
 open_file_widget = pn.widgets.Button(name="open/read file?", button_type='primary')
 
 
@@ -78,11 +78,12 @@ def show_selected_field(field, x):
 
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
-#    if len(file_name) <= 0:
-#        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
-#    else:
-    return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
-        # return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
+    if len(file_name) <= 0:
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
+    else:
+        datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
+        fields = get_field_names(datatree)
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields)
 
 
 def show_status_open_file(dummy=1):
