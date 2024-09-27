@@ -61,12 +61,9 @@ card = pn.Card(file_selector_widget, title='Step 1. Choose Data File', styles={'
 
 x = pn.widgets.IntSlider(name='sweep', start=0, end=get_sweeps(datatree)-1)
 background = pn.widgets.ColorPicker(name='Background', value='lightgray')
-# field_names_widget = pn.widgets.Select(name="field", options=['A','E','F'])
 field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
 open_file_widget = pn.widgets.Button(name="open/read file?", button_type='primary')
 
-def square(x):
-    return f'{x} squared is {x**2}'
 
 def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
@@ -111,26 +108,13 @@ dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 my_column = pn.Column(
     # waves_image(1,0),
     # dmap[1,2] + dmap.select(alpha=1, beta=2),
-    dmap.redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO']),
     card,
-    # pn.pane.Markdown(pn.bind(show_selected_file, file_selector_widget)), # , styles=pn.bind(styles, background))
     pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='bokeh'), # , styles=pn.bind(styles, background))
-    open_file_widget,
-    pn.pane.Markdown(pn.bind(show_status_open_file, open_file_widget)),
-    x,
-    field_names_widget,
-    background,
-    # pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
-    pn.pane.Markdown(pn.bind(show_selected_field, field_names_widget, x), styles=pn.bind(styles, background))
 )
 
 # make this into a stand alone app
 pn.template.MaterialTemplate(
     site="MICA",
     title="Getting Started App",
-    #sidebar=[field_names_widget],
-    #main=[card]
-    # main=[field_names_widget]
     main=[my_column]
-#    main=[card, bound_get_fields]
 ).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
