@@ -30,3 +30,7 @@ corresponding images are here
 to convert notebook to py file....
 
 jupyter nbconvert --to script panel_file_chooser_cards_datatree.ipynb 
+
+
+open browser here 
+Bokeh app running at: http://localhost:5006/panel_file_chooser_cards
