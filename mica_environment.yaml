@@ -1,0 +1,13 @@
+#
+name: holoviews_panel_env 
+# the channels that should be used
+channels:
+    - conda-forge 
+# and the packages to install
+dependencies:
+    - numpy
+    - xarray
+    - xradar
+    - panel
+    - holoviews
+

@@ -94,7 +94,8 @@ import hvplot.xarray
 
 # Use this after binding file chooser to open file
 # ds = xr.open_dataset(localfilename[0])
-ds = xr.open_dataset("/Users/brenda/data/PRECIP/SEA20220702_001310_ppi.nc") # , group="sweep_0") # , engine="nexradlevel2")
+# ds = xr.open_dataset("/Users/brenda/data/PRECIP/SEA20220702_001310_ppi.nc") # , group="sweep_0") # , engine="nexradlevel2")
+ds = xr.open_dataset("/Users/brenda/data/cfrad.20170408_001452.962_to_20170408_002320.954_KARX_Surveillance_SUR.nc") # , group="sweep_0") # , engine="nexradlevel2")
 # display(ds)
 
 
@@ -133,7 +134,7 @@ def get_fields(variable=[]):  # ="*.nc"):
     if (file_name):
         ds = xr.open_dataset(file_name) # , engine='cfradial1')  # "/home/jovyan/notebooks/data-access/ARPA_Lombardia.20240522.151546_dealiased.nc") # , group="sweep_0") # , engine="nexradlevel2")
         for v in list(ds.data_vars):
-            # print(v)
+            print(v)
             dim = len(ds.data_vars[v].shape)
             if dim == 2:
                 print(v)
@@ -159,7 +160,8 @@ def get_fields(variable=[]):  # ="*.nc"):
 #bound_plot2 = pn.bind(
 #    get_fields, ds=get_data_set
 #)
-wd = get_fields("/Users/brenda/data/PRECIP/SEA20220702_001310_ppi.nc")
+#wd = get_fields("/Users/brenda/data/PRECIP/SEA20220702_001310_ppi.nc")
+wd = get_fields("/Users/brenda/data/cfrad.20170408_001452.962_to_20170408_002320.954_KARX_Surveillance_SUR.nc")
 wd
 
 

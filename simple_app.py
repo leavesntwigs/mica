@@ -18,9 +18,10 @@ from holoviews import opts
 hv.extension('matplotlib')
 
 # NEXRAD
-#path = "/Users/brenda/data/for_mica/nexrad/"
-#filename = "KBBX20240510_010615_V06"
-#datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+# TODO: make a default datatree structure
+path = "/Users/brenda/data/for_mica/nexrad/"
+filename = "KBBX20240510_010615_V06"
+datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
 
 # TODO: set default datatree and default filename, so that widgets display null
 # at initial start up or on error?
@@ -33,9 +34,6 @@ def get_datatree(file_full_path):
     new_datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_full_path)
     return new_datatree
     
-
-def get_field_names(dummy):
-    return ['A', 'B', 'C']
 
 def get_field_names(datatree):
 # get field variables from a datatree ...
@@ -83,7 +81,8 @@ def show_selected_file(file_name):
     else:
         datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
         fields = get_field_names(datatree)
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields)
+        sweeps = get_sweeps(datatree)
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
 def show_status_open_file(dummy=1):
@@ -92,15 +91,36 @@ def show_status_open_file(dummy=1):
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
+def get_plot(field, datatree):
+    sweep = datatree['/sweep_0']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    return hv.Image(sweep.ZDR)
+#     xs, ys = np.meshgrid(rvals, azvals)
+#     return hv.Image(sweep[field], xs, ys)
+    
+
 #------
 # from DynamicMap tutorial ...
 
 xvals = np.linspace(-4, 0, 100)
 yvals = np.linspace(4, 0, 100)
 xs, ys = np.meshgrid(xvals, yvals)
-
-def waves_image(alpha, beta, field, dtree=3):
-    return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
+# 
+# HERE datatree must not be sent!!! 
+#
+def waves_image(alpha, beta, field):  # , dtree=None):
+    if hasattr(datatree, 'groups'):
+        if (len(datatree.groups) > 0):
+            ls = np.linspace(0, 10, 200)
+            xx, yy = np.meshgrid(ls, ls)
+            bounds=(-1,-1,1,1)   # Coordinate system: (left, bottom, right, top)
+            return hv.Image(np.sin(xx)*np.cos(yy), bounds=bounds)
+            # return hv.Image(datatree['/sweep_0'].ZDR)
+        else:
+            return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
+    else:
+        return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
 
 dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 
