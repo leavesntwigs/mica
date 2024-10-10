@@ -4,6 +4,21 @@ CIDD in python
 hvplot - built on holoviews - interactive layer on top of other packages: matplotlib, bokeh, plotly
 panel  - built on Bokeh
 
+10/10/2024 
+finally got something working for a polar plot
+for jupyter lab ...
+$ mamba create -n holoviews_panel_20241007 -c conda-forge numpy xarray xradar panel holoviews jupyter 
+$ mamba activate holoviews_panel_20241007
+
+for panel web app ...
+(bokeh_heatmap_env) eol-antigua:mica brenda$ panel serve simple_app.py  --autoreload
+2024-10-09 16:57:50,964 Starting Bokeh server version 3.4.1 (running on Tornado 6.4.1)
+2024-10-09 16:57:50,966 User authentication hooks NOT provided (default user enabled)
+2024-10-09 16:57:50,969 Bokeh app running at: http://localhost:5006/simple_app
+
+-------
+
+
 mamba install geoviews, hvplot, panel
 
 

@@ -5,14 +5,14 @@ import numpy as np
 import holoviews as hv
 import pandas as pd
 import panel as pn
-import hvplot.pandas
+# import hvplot.pandas
 import xarray as xr
 import xradar as xd
 #import cmweather
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 #import pyproj
 #import cartopy
-import hvplot.xarray
+# import hvplot.xarray
 
 from holoviews import opts
 hv.extension('matplotlib')
@@ -109,7 +109,7 @@ xs, ys = np.meshgrid(xvals, yvals)
 # 
 # HERE datatree must not be sent!!! 
 #
-def waves_image(alpha, beta, field):  # , dtree=None):
+def waves_image_old(alpha, beta, field):  # , dtree=None):
     if hasattr(datatree, 'groups'):
         if (len(datatree.groups) > 0):
             ls = np.linspace(0, 10, 200)
@@ -122,15 +122,51 @@ def waves_image(alpha, beta, field):  # , dtree=None):
     else:
         return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
 
+def waves_image(alpha, beta, field):
+    # Generate data in polar coordinates
+    theta = np.linspace(0, 2 * np.pi, 360)
+    r = np.linspace(0, 1, 100)
+    R, Theta = np.meshgrid(r, theta)
+    Z = np.sin(R) * np.cos(Theta)
+    # add options using the Options Builder
+    img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
+    # img = hv.QuadMesh((R, Theta, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
+    # img.opts(title='squirrels')
+    #fig = hv.render(img)
+    #fig.axes.pcolormesh(Theta, R, Z, cmap='viridis')
+    #img.opts(cmap='viridis', 
+    #    backend_opts={"projection.polar": True}
+    #)
+    return img
+
+def waves_image_new(alpha, beta, field):
+    # Generate data in polar coordinates
+    theta = np.linspace(0, 2 * np.pi, 360)
+    r = np.linspace(0, 1, 100)
+    R, Theta = np.meshgrid(r, theta)
+    Z = np.sin(R) * np.cos(Theta)
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
+    #  Create a polar plot
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # Plot the quadmesh
+    ax.pcolormesh(Theta, R, Z, cmap='viridis')
+    # Add a title
+    plt.title('Quadmesh on Polar Coordinates HV')
+    # Show the plot
+    #plt.show()
+    # fig
+    return fig 
+
+
 dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 
 #-----
 
 my_column = pn.Column(
-    # waves_image(1,0),
+    waves_image_new(1,0,'DBQ'),
     # dmap[1,2] + dmap.select(alpha=1, beta=2),
     card,
-    pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='bokeh'), # , styles=pn.bind(styles, background))
+    pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='matplotlib'), # , styles=pn.bind(styles, background))
 )
 
 # make this into a stand alone app
