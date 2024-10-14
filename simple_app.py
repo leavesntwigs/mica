@@ -139,13 +139,71 @@ def waves_image(alpha, beta, field):
     #)
     return img
 
+# Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
 def waves_image_new(alpha, beta, field):
+    # uses global datatree ...
+    sweep = datatree['/sweep_8']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    #return hv.Image(sweep.ZDR)
+    # Generate data in polar coordinates
+    test_data = False # True
+    if test_data:
+        theta = np.linspace(0, 2 * np.pi, 360)
+        r = np.linspace(0, 1, 100)
+        R, Theta = np.meshgrid(r, theta)
+        Z = np.sin(R) * np.cos(Theta)
+    else:
+        # construct an xarray.DataArray ...
+        #sweep_number = 8
+        #sweep_start_ray_index = int(ds.sweep_start_ray_index.data[sweep_number])
+        #sweep_end_ray_index = int(ds.sweep_end_ray_index.data[sweep_number])
+        #sweep_azimuths = ds.azimuth.data[sweep_start_ray_index:sweep_end_ray_index+1]
+        #n_gates = int(ds.ray_n_gates.data[sweep_start_ray_index])
+        #gate_spacing = int(ds.ray_gate_spacing.data[sweep_start_ray_index])
+        #start_range = int(ds.ray_start_range.data[sweep_start_ray_index])
+        #end_gate = start_range+(n_gates*gate_spacing)
+        #sweep_range = np.linspace(start_range, end_gate, n_gates, endpoint=False)
+        ## ray_n_gates(time) float64
+        ## ray_gate_spacing(time)
+        ## VEL(n_points)
+        #npoints_start_ray_n = int(ds.ray_start_index.data[sweep_start_ray_index])
+        #npoints_end_ray_n = int(ds.ray_start_index.data[sweep_end_ray_index] + ds.ray_n_gates.data[sweep_start_ray_index])
+        #ray_data = ds.RHO.data[npoints_start_ray_n:npoints_end_ray_n]
+        # data_2d = np.reshape(ray_data, (len(sweep_azimuths), n_gates))
+        # sweep_dataarray = xr.DataArray(data_2d, coords=[sweep_azimuths, sweep_range], dims=["az", "range"])
+        # R, Theta = np.meshgrid(sweep_range, sweep_azimuths)
+        # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
+        # # Add a title
+        # plt.title('Quadmesh on Polar Coordinates true data')
+
+        theta = azvals  
+        r = rvals 
+        R, Theta = np.meshgrid(r, theta)
+        #                              (nrows, ncolumns)
+        z = np.reshape(sweep.ZDR.data, (len(azvals), len(rvals)))
+        Z = np.nan_to_num(z, nan=-32656)
+        # Z = np.sin(R) * np.cos(Theta)
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
+    #  Create a polar plot
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # Plot the quadmesh
+    #            (X(column), Y(row), Z(row,column))
+    ax.pcolormesh(Theta, R, Z, cmap='viridis', shading='nearest')
+    # Add a title
+    plt.title('Quadmesh on Polar Coordinates HV')
+    # Show the plot
+    #plt.show()
+    # fig
+    return fig 
+
+def waves_image_new1(alpha, beta, field):
     # Generate data in polar coordinates
     theta = np.linspace(0, 2 * np.pi, 360)
     r = np.linspace(0, 1, 100)
     R, Theta = np.meshgrid(r, theta)
     Z = np.sin(R) * np.cos(Theta)
-    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',)
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # Plot the quadmesh
@@ -155,8 +213,7 @@ def waves_image_new(alpha, beta, field):
     # Show the plot
     #plt.show()
     # fig
-    return fig 
-
+    return fig
 
 dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 
