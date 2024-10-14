@@ -77,7 +77,7 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['DBZ', 'REF', 'RHO'])
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['PHIDP', 'DBZH', 'RHOHV'])
     else:
         datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
         fields = get_field_names(datatree)
@@ -122,7 +122,7 @@ def waves_image_old(alpha, beta, field):  # , dtree=None):
     else:
         return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
 
-def waves_image(alpha, beta, field):
+def waves_image_old1(alpha, beta, field):
     # Generate data in polar coordinates
     theta = np.linspace(0, 2 * np.pi, 360)
     r = np.linspace(0, 1, 100)
@@ -138,6 +138,23 @@ def waves_image(alpha, beta, field):
     #    backend_opts={"projection.polar": True}
     #)
     return img
+
+def waves_image(alpha, beta, field):
+    # uses global datatree ...
+    sweep = datatree['/sweep_8']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    theta = azvals
+    r = rvals
+    R, Theta = np.meshgrid(r, theta)
+    fieldvar = sweep[field]
+    #                              (nrows, ncolumns)
+    z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+    Z = np.nan_to_num(z, nan=-32656)
+    # add options using the Options Builder
+    img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
+    return img
+
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
 def waves_image_new(alpha, beta, field):
@@ -180,8 +197,9 @@ def waves_image_new(alpha, beta, field):
         theta = azvals  
         r = rvals 
         R, Theta = np.meshgrid(r, theta)
+        fieldvar = sweep[field]
         #                              (nrows, ncolumns)
-        z = np.reshape(sweep.ZDR.data, (len(azvals), len(rvals)))
+        z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
         Z = np.nan_to_num(z, nan=-32656)
         # Z = np.sin(R) * np.cos(Theta)
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
@@ -191,7 +209,7 @@ def waves_image_new(alpha, beta, field):
     #            (X(column), Y(row), Z(row,column))
     ax.pcolormesh(Theta, R, Z, cmap='viridis', shading='nearest')
     # Add a title
-    plt.title('Quadmesh on Polar Coordinates HV')
+    plt.title('Quadmesh on Polar Coordinates HV: ' + field)
     # Show the plot
     #plt.show()
     # fig
@@ -220,7 +238,7 @@ dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
 #-----
 
 my_column = pn.Column(
-    waves_image_new(1,0,'DBQ'),
+    waves_image_new(1,0,'ZDR'),
     # dmap[1,2] + dmap.select(alpha=1, beta=2),
     card,
     pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='matplotlib'), # , styles=pn.bind(styles, background))
