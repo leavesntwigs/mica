@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 # import hvplot.xarray
 
 from holoviews import opts
-hv.extension('matplotlib')
+hv.extension('matplotlib')  # plotly, bokeh, matplotlib
 
 # NEXRAD
 # TODO: make a default datatree structure
@@ -77,12 +77,16 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=['PHIDP', 'DBZH', 'RHOHV'])
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=['/sweep_0'], field=['PHIDP', 'DBZH', 'RHOHV'])
     else:
         datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
         fields = get_field_names(datatree)
         sweeps = get_sweeps(datatree)
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
+        print(datatree.groups)
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], 
+            beta=datatree.groups,
+            field=fields) # , dtree=datatree)
+        # return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
 def show_status_open_file(dummy=1):
@@ -140,25 +144,43 @@ def waves_image_old1(alpha, beta, field):
     return img
 
 def waves_image(alpha, beta, field):
-    # uses global datatree ...
-    sweep = datatree['/sweep_8']
-    rvals = sweep.range
-    azvals = sweep.azimuth
-    theta = azvals
-    r = rvals
-    R, Theta = np.meshgrid(r, theta)
-    fieldvar = sweep[field]
-    #                              (nrows, ncolumns)
-    z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-    Z = np.nan_to_num(z, nan=-32656)
-    # add options using the Options Builder
-    img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
+    if (len(beta)):
+        # uses global datatree ...
+        sweep_name = beta
+        sweep = datatree[sweep_name] # ['/sweep_8']
+        rvals = sweep.range
+        azvals = sweep.azimuth
+        max_range = 300
+        # theta = azvals
+        # the azimuth need to be sorted into ascending order
+        theta =  np.linspace(0, 2 * np.pi, 720) # azvals
+        r = rvals[:max_range]
+        R, Theta = np.meshgrid(r, theta)
+        fieldvar = sweep[field]
+        #                       shape = (|az|, |range|)
+        pn.state.log(f'fieldvar.shape = {fieldvar.shape}  ')
+        #                              (nrows, ncolumns)
+        # z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        z2 = fieldvar.data[:,:max_range] 
+        pn.state.log(f'z2.shape = {z2.shape}  ')
+        #z = fieldvar.data 
+        Z = np.nan_to_num(z2, nan=-32656)
+        # add options using the Options Builder
+        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='jet', projection='polar'))
+    else:
+        # use test data ..
+        theta = np.linspace(0, 2 * np.pi, 360)
+        r = np.linspace(0, 1, 100)
+        R, Theta = np.meshgrid(r, theta)
+        Z = np.sin(R) * np.cos(Theta)
+        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='jet', projection='polar'))
     return img
 
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
 def waves_image_new(alpha, beta, field):
     # uses global datatree ...
+    pn.state.log(f'beta =  ... ')
     sweep = datatree['/sweep_8']
     rvals = sweep.range
     azvals = sweep.azimuth
@@ -193,14 +215,16 @@ def waves_image_new(alpha, beta, field):
         # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
         # # Add a title
         # plt.title('Quadmesh on Polar Coordinates true data')
-
-        theta = azvals  
-        r = rvals 
+        max_range = 200
+# the azimuth need to be sorted into ascending order
+        theta =  np.linspace(0, 2 * np.pi, 358) # azvals  
+        r = np.linspace(0,1, max_range) # rvals[:max_range]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
         #                              (nrows, ncolumns)
-        z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        Z = np.nan_to_num(z, nan=-32656)
+        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        z = fieldvar.data[:,:max_range]
+        Z = z # np.nan_to_num(z, nan=-32656)
         # Z = np.sin(R) * np.cos(Theta)
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
     #  Create a polar plot

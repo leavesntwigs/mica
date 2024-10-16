@@ -11,11 +11,11 @@ $ mamba create -n holoviews_panel_20241007 -c conda-forge numpy xarray xradar pa
 $ mamba activate holoviews_panel_20241007
 
 for panel web app ...
-(bokeh_heatmap_env) eol-antigua:mica brenda$ panel serve simple_app.py  --autoreload
+(bokeh_heatmap_env) eol-antigua:mica brenda$ panel serve simple_app.py  --autoreload --admin
 2024-10-09 16:57:50,964 Starting Bokeh server version 3.4.1 (running on Tornado 6.4.1)
 2024-10-09 16:57:50,966 User authentication hooks NOT provided (default user enabled)
 2024-10-09 16:57:50,969 Bokeh app running at: http://localhost:5006/simple_app
-
+Admin panel and to view logs go to http://localhost:5006/admin
 -------
 
 
