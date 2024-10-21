@@ -1,7 +1,7 @@
 
 
 
-import numpy as np
+# import numpy as np
 import holoviews as hv
 import pandas as pd
 import panel as pn
@@ -14,14 +14,57 @@ import matplotlib.pyplot as plt
 #import cartopy
 # import hvplot.xarray
 
+
+import numpy as np
+
 from holoviews import opts
 hv.extension('matplotlib')  # plotly, bokeh, matplotlib
 
+
+is_cfradial = True
+
+# Function to create a colortable that matches the NWS colortable
+def radar_colormap():
+    nws_reflectivity_colors = [
+    "#646464", # ND
+    "#ccffff", # -30
+    "#cc99cc", # -25
+    "#996699", # -20
+    "#663366", # -15
+    "#cccc99", # -10
+    "#999966", # -5
+    "#646464", # 0
+    "#04e9e7", # 5
+    "#019ff4", # 10
+    "#0300f4", # 15
+    "#02fd02", # 20
+    "#01c501", # 25
+    "#008e00", # 30
+    "#fdf802", # 35
+    "#e5bc00", # 40
+    "#fd9500", # 45
+    "#fd0000", # 50
+    "#d40000", # 55
+    "#bc0000", # 60
+    "#f800fd", # 65
+    "#9854c6", # 70
+    "#fdfdfd" # 75
+    ]
+
+    return mpl.colors.ListedColormap(nws_reflectivity_colors)
+
+
 # NEXRAD
 # TODO: make a default datatree structure
-path = "/Users/brenda/data/for_mica/nexrad/"
-filename = "KBBX20240510_010615_V06"
-datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+if is_cfradial:
+    dirname = "/Users/brenda/data/for_mica/nexrad/output/20240510"
+    filename = "cfrad.20240510_010615.273_to_20240510_011309.471_KBBX_SUR.nc"
+    localfilename = dirname + "/" + filename
+    datatree = xd.io.open_cfradial1_datatree(localfilename)
+else:
+    path = "/Users/brenda/data/for_mica/nexrad/"
+    filename = "KBBX20240510_010615_V06"
+    datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
 
 # TODO: set default datatree and default filename, so that widgets display null
 # at initial start up or on error?
@@ -77,7 +120,7 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=['/sweep_0'], field=['PHIDP', 'DBZH', 'RHOHV'])
+        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=['/sweep_0'], field=['ZDR', 'DBZH', 'RHOHV'])
     else:
         datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
         fields = get_field_names(datatree)
@@ -150,10 +193,10 @@ def waves_image(alpha, beta, field):
         sweep = datatree[sweep_name] # ['/sweep_8']
         rvals = sweep.range
         azvals = sweep.azimuth
-        max_range = 300
+        max_range = 2 # 300
         # theta = azvals
         # the azimuth need to be sorted into ascending order
-        theta =  np.linspace(0, 2 * np.pi, 720) # azvals
+        theta = azvals #  np.linspace(0, 2 * np.pi, 720) # azvals
         r = rvals[:max_range]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
@@ -215,23 +258,32 @@ def waves_image_new(alpha, beta, field):
         # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
         # # Add a title
         # plt.title('Quadmesh on Polar Coordinates true data')
-        max_range = 200
+        max_range = 100
 # the azimuth need to be sorted into ascending order
-        theta =  np.linspace(0, 2 * np.pi, 358) # azvals  
-        r = np.linspace(0,1, max_range) # rvals[:max_range]
+        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
+        # r = np.linspace(0,1, max_range) 
+        r = rvals[:max_range]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
         #                              (nrows, ncolumns)
         #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
         z = fieldvar.data[:,:max_range]
-        Z = z # np.nan_to_num(z, nan=-32656)
+        scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
+        z_bin_sort = np.zeros((360,max_range))
+        for i in range(0,360):
+            raw_az = azvals[i]
+            new_z_index = int(raw_az/scale_factor)
+            if (new_z_index >= 360):
+                new_z_index -= 360
+            z_bin_sort[new_z_index] = z[i]
+        Z = np.nan_to_num(z_bin_sort, nan=-32)
         # Z = np.sin(R) * np.cos(Theta)
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
-    ax.pcolormesh(Theta, R, Z, cmap='viridis', shading='nearest')
+    ax.pcolormesh(Theta, R, Z, cmap='seismic', shading='nearest')
     # Add a title
     plt.title('Quadmesh on Polar Coordinates HV: ' + field)
     # Show the plot
