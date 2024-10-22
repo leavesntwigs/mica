@@ -62,6 +62,23 @@ def get_field_names(datatree):
     return fieldnames
 #    return ['A', 'B', 'C']
 
+minimum_number_of_gates = 50
+def get_ranges(datatree):
+    sweep = datatree['/sweep_0'] # TODO: what if this sweep doesn't exist?
+    start_range = sweep.ray_start_range.data[0]
+    gate_spacing = sweep.ray_gate_spacing.data[0]
+    ngates = sweep.ray_n_gates.data[0]
+    return [start_range+gate_spacing*minimum_number_of_gates,
+        start_range+gate_spacing*int(ngates/2), start_range+gate_spacing*ngates] 
+
+def map_range_to_index(max_range, rvals, gate_spacing, start_range):
+    index = int((max_range - start_range)/gate_spacing)
+    if index < minimum_number_of_gates:
+        index = minimum_number_of_gates
+    if index > len(rvals):
+        index = len(rvals) - 1
+    return index
+
 def get_sweeps(datatree):
 # get the number of sweeps from a datatree ...
     return len(datatree.groups) - 1
@@ -102,7 +119,8 @@ def show_selected_file(file_name):
         sweeps = get_sweeps(datatree)
         print(datatree.groups)
         sweep_names = [name for name in datatree.groups if 'sweep' in name] 
-        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[100,200,300,400, 500, 600, 700], 
+        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
+            max_range=get_ranges(datatree), # [100,200,300,400, 500, 600, 700], 
             beta=sweep_names,  # datatree.groups,
             field=fields) # , dtree=datatree)
         # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
@@ -145,23 +163,6 @@ def waves_image_old(max_range, beta, field):  # , dtree=None):
     else:
         return hv.Image(np.sin(((ys/max_range)**max_range+beta)*xs))
 
-def waves_image_old1(max_range, beta, field):
-    # Generate data in polar coordinates
-    theta = np.linspace(0, 2 * np.pi, 360)
-    r = np.linspace(0, 1, 100)
-    R, Theta = np.meshgrid(r, theta)
-    Z = np.sin(R) * np.cos(Theta)
-    # add options using the Options Builder
-    img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
-    # img = hv.QuadMesh((R, Theta, Z)).opts(opts.QuadMesh(cmap='viridis', projection='polar'))
-    # img.opts(title='squirrels')
-    #fig = hv.render(img)
-    #fig.axes.pcolormesh(Theta, R, Z, cmap='viridis')
-    #img.opts(cmap='viridis', 
-    #    backend_opts={"projection.polar": True}
-    #)
-    return img
-
 def waves_image(max_range, beta, field):
     if (len(beta)):
         # uses global datatree ...
@@ -169,7 +170,9 @@ def waves_image(max_range, beta, field):
         sweep = datatree[sweep_name] # ['/sweep_8']
         rvals = sweep.range
         azvals = sweep.azimuth
-        max_range = max_range # 100 # 300
+        max_range = map_range_to_index(max_range, rvals,
+            sweep.ray_gate_spacing.data[0],
+            sweep.ray_start_range.data[0])  # 100 # 300
         # theta = azvals
         # the azimuth need to be sorted into ascending order
         # theta = azvals #  np.linspace(0, 2 * np.pi, 720) # azvals
