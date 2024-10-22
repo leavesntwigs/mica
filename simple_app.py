@@ -23,36 +23,6 @@ hv.extension('matplotlib')  # plotly, bokeh, matplotlib
 
 is_cfradial = True
 
-# Function to create a colortable that matches the NWS colortable
-def radar_colormap():
-    nws_reflectivity_colors = [
-    "#646464", # ND
-    "#ccffff", # -30
-    "#cc99cc", # -25
-    "#996699", # -20
-    "#663366", # -15
-    "#cccc99", # -10
-    "#999966", # -5
-    "#646464", # 0
-    "#04e9e7", # 5
-    "#019ff4", # 10
-    "#0300f4", # 15
-    "#02fd02", # 20
-    "#01c501", # 25
-    "#008e00", # 30
-    "#fdf802", # 35
-    "#e5bc00", # 40
-    "#fd9500", # 45
-    "#fd0000", # 50
-    "#d40000", # 55
-    "#bc0000", # 60
-    "#f800fd", # 65
-    "#9854c6", # 70
-    "#fdfdfd" # 75
-    ]
-
-    return mpl.colors.ListedColormap(nws_reflectivity_colors)
-
 
 # NEXRAD
 # TODO: make a default datatree structure
@@ -120,16 +90,22 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=['/sweep_0'], field=['ZDR', 'DBZH', 'RHOHV'])
+        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[100,200,300], beta=['/sweep_0'], field=['ZDR', 'DBZH', 'RHOHV'])
     else:
-        datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
+        if is_cfradial:
+            datatree = xd.io.open_cfradial1_datatree(file_name[0])
+            pn.state.log(f'after cfradial datatree = {datatree.groups}  ')
+            # filter the groups by keyword sweep
+        else:
+            datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
         fields = get_field_names(datatree)
         sweeps = get_sweeps(datatree)
         print(datatree.groups)
-        return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], 
-            beta=datatree.groups,
+        sweep_names = [name for name in datatree.groups if 'sweep' in name] 
+        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[100,200,300,400, 500, 600, 700], 
+            beta=sweep_names,  # datatree.groups,
             field=fields) # , dtree=datatree)
-        # return hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field']).redim.values(alpha=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
+        # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
 def show_status_open_file(dummy=1):
@@ -156,7 +132,7 @@ xs, ys = np.meshgrid(xvals, yvals)
 # 
 # HERE datatree must not be sent!!! 
 #
-def waves_image_old(alpha, beta, field):  # , dtree=None):
+def waves_image_old(max_range, beta, field):  # , dtree=None):
     if hasattr(datatree, 'groups'):
         if (len(datatree.groups) > 0):
             ls = np.linspace(0, 10, 200)
@@ -165,11 +141,11 @@ def waves_image_old(alpha, beta, field):  # , dtree=None):
             return hv.Image(np.sin(xx)*np.cos(yy), bounds=bounds)
             # return hv.Image(datatree['/sweep_0'].ZDR)
         else:
-            return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
+            return hv.Image(np.sin(((ys/max_range)**max_range+beta)*xs))
     else:
-        return hv.Image(np.sin(((ys/alpha)**alpha+beta)*xs))
+        return hv.Image(np.sin(((ys/max_range)**max_range+beta)*xs))
 
-def waves_image_old1(alpha, beta, field):
+def waves_image_old1(max_range, beta, field):
     # Generate data in polar coordinates
     theta = np.linspace(0, 2 * np.pi, 360)
     r = np.linspace(0, 1, 100)
@@ -186,30 +162,45 @@ def waves_image_old1(alpha, beta, field):
     #)
     return img
 
-def waves_image(alpha, beta, field):
+def waves_image(max_range, beta, field):
     if (len(beta)):
         # uses global datatree ...
         sweep_name = beta
         sweep = datatree[sweep_name] # ['/sweep_8']
         rvals = sweep.range
         azvals = sweep.azimuth
-        max_range = 2 # 300
+        max_range = max_range # 100 # 300
         # theta = azvals
         # the azimuth need to be sorted into ascending order
-        theta = azvals #  np.linspace(0, 2 * np.pi, 720) # azvals
+        # theta = azvals #  np.linspace(0, 2 * np.pi, 720) # azvals
+        theta = np.linspace(0, 2 * np.pi, 360)
         r = rvals[:max_range]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
-        #                       shape = (|az|, |range|)
-        pn.state.log(f'fieldvar.shape = {fieldvar.shape}  ')
-        #                              (nrows, ncolumns)
-        # z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        z2 = fieldvar.data[:,:max_range] 
-        pn.state.log(f'z2.shape = {z2.shape}  ')
-        #z = fieldvar.data 
-        Z = np.nan_to_num(z2, nan=-32656)
+        ##                       shape = (|az|, |range|)
+        #pn.state.log(f'fieldvar.shape = {fieldvar.shape}  ')
+        ##                              (nrows, ncolumns)
+        ## z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        #z2 = fieldvar.data[:,:max_range] 
+        #pn.state.log(f'z2.shape = {z2.shape}  ')
+        ##z = fieldvar.data 
+
+
+        z = fieldvar.data[:,:max_range]
+        scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
+        z_bin_sort = np.zeros((360,max_range))
+        for i in range(0,360):
+            raw_az = azvals[i]
+            new_z_index = int(raw_az/scale_factor)
+            if (new_z_index >= 360):
+                new_z_index -= 360
+            z_bin_sort[new_z_index] = z[i]
+
+
+
+        Z = np.nan_to_num(z_bin_sort, nan=-32)
         # add options using the Options Builder
-        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='jet', projection='polar'))
+        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='seismic', projection='polar'))
     else:
         # use test data ..
         theta = np.linspace(0, 2 * np.pi, 360)
@@ -221,7 +212,7 @@ def waves_image(alpha, beta, field):
 
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
-def waves_image_new(alpha, beta, field):
+def waves_image_new(max_range, beta, field):
     # uses global datatree ...
     pn.state.log(f'beta =  ... ')
     sweep = datatree['/sweep_8']
@@ -278,7 +269,7 @@ def waves_image_new(alpha, beta, field):
             z_bin_sort[new_z_index] = z[i]
         Z = np.nan_to_num(z_bin_sort, nan=-32)
         # Z = np.sin(R) * np.cos(Theta)
-    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='viridis',) 
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # Plot the quadmesh
@@ -291,7 +282,7 @@ def waves_image_new(alpha, beta, field):
     # fig
     return fig 
 
-def waves_image_new1(alpha, beta, field):
+def waves_image_new1(max_range, beta, field):
     # Generate data in polar coordinates
     theta = np.linspace(0, 2 * np.pi, 360)
     r = np.linspace(0, 1, 100)
@@ -309,13 +300,13 @@ def waves_image_new1(alpha, beta, field):
     # fig
     return fig
 
-dmap = hv.DynamicMap(waves_image, kdims=['alpha', 'beta', 'field'])
+dmap = hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field'])
 
 #-----
 
 my_column = pn.Column(
     waves_image_new(1,0,'ZDR'),
-    # dmap[1,2] + dmap.select(alpha=1, beta=2),
+    # dmap[1,2] + dmap.select(max_range=1, beta=2),
     card,
     pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='matplotlib'), # , styles=pn.bind(styles, background))
 )
