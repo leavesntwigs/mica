@@ -23,6 +23,54 @@ hv.extension('matplotlib')  # plotly, bokeh, matplotlib
 
 is_cfradial = True
 
+# TODO: make a separate module/package for this ...
+import matplotlib.colors as colors
+from matplotlib.colors import to_rgb
+
+color_conversion_base = "/Users/brenda/git/mica"
+file_name = "x11_colors_map.txt"
+conversion_file = color_conversion_base + "/" + file_name
+x11_color_name_map = {}  # it is a dictionary
+# read the color name to hex conversion file
+f = open(conversion_file, "r")
+for line in f.readlines():
+    x = line.split()
+    x11_color_name_map[x[0]]=x[1]
+
+
+color_scale_base = "/Users/brenda/git/lrose-displays/lrose-displays-master/color_scales"
+file_name = "zdr_color"
+color_scale_file = color_scale_base + "/" + file_name
+color_names = []
+edges = []
+# read the color map file
+f = open(color_scale_file, "r")
+for line in f.readlines():
+    if line[0] != '#':
+        print(line)
+        x = line.split()
+        print(x)
+        if len(x) == 3:
+            color_names.append(x[2].lower())
+            if len(edges) == 0:
+                edges.append(x[0])
+            edges.append(x[1])
+# add the ending edge
+# display(color_names)
+# display(edges)
+# convert the X11 color names to hex
+color_scale_hex = []
+for cname in color_names:
+    if cname in x11_color_name_map:
+        color_scale_hex.append(x11_color_name_map[cname]) 
+    else:
+        color_scale_hex.append(colors.to_hex(cname))
+
+# convert color names to rgb
+#rgb_color = to_rgb("dodgerblue")
+# define color map (matplotlib.colors.ListedColormap)
+norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
+
 
 # NEXRAD
 # TODO: make a default datatree structure
@@ -202,8 +250,11 @@ def waves_image(max_range, beta, field):
 
 
         Z = np.nan_to_num(z_bin_sort, nan=-32)
+        # get the color map
+        cmap = colors.ListedColormap(color_scale_hex)
         # add options using the Options Builder
-        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap='seismic', projection='polar'))
+        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap, projection='polar',
+            ))
     else:
         # use test data ..
         theta = np.linspace(0, 2 * np.pi, 360)
@@ -277,7 +328,8 @@ def waves_image_new(max_range, beta, field):
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
-    ax.pcolormesh(Theta, R, Z, cmap='seismic', shading='nearest')
+    psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    fig.colorbar(psm, ax=ax)
     # Add a title
     plt.title('Quadmesh on Polar Coordinates HV: ' + field)
     # Show the plot
