@@ -53,8 +53,8 @@ for line in f.readlines():
         if len(x) == 3:
             color_names.append(x[2].lower())
             if len(edges) == 0:
-                edges.append(x[0])
-            edges.append(x[1])
+                edges.append(float(x[0]))
+            edges.append(float(x[1]))
 # add the ending edge
 # display(color_names)
 # display(edges)
@@ -69,8 +69,14 @@ for cname in color_names:
 # convert color names to rgb
 #rgb_color = to_rgb("dodgerblue")
 # define color map (matplotlib.colors.ListedColormap)
-norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
-
+try:
+    gg = 3
+    norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
+    norm.vmin=-32656
+    norm.vmax=32656
+    (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
+except ValueError as err:
+    print("something went wrong first: ", err)
 
 # NEXRAD
 # TODO: make a default datatree structure
@@ -253,8 +259,14 @@ def waves_image(max_range, beta, field):
         # get the color map
         cmap = colors.ListedColormap(color_scale_hex)
         # add options using the Options Builder
-        img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap, projection='polar',
-            ))
+        try:
+            img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap, projection='polar',
+                colorbar = True,
+                #norm=colors.BoundaryNorm(edges, ncolors=len(edges)), # causes an error
+                #norm=norm
+                ))
+        except ValueError as err:
+            print("something went wrong: ", err)
     else:
         # use test data ..
         theta = np.linspace(0, 2 * np.pi, 360)
@@ -328,7 +340,12 @@ def waves_image_new(max_range, beta, field):
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
-    psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    psm = ax.pcolormesh(Theta, R, Z, 
+        cmap=zcmap,
+        # norm=znorm,
+        norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+        rasterized=True, shading='nearest')
     fig.colorbar(psm, ax=ax)
     # Add a title
     plt.title('Quadmesh on Polar Coordinates HV: ' + field)
