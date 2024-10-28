@@ -47,11 +47,12 @@ edges = []
 f = open(color_scale_file, "r")
 for line in f.readlines():
     if line[0] != '#':
-        print(line)
+        # print(line)
         x = line.split()
-        print(x)
+        # print(x)
         if len(x) == 3:
             color_names.append(x[2].lower())
+            pn.state.log(x[2].lower)
             if len(edges) == 0:
                 edges.append(float(x[0]))
             edges.append(float(x[1]))
@@ -72,9 +73,10 @@ for cname in color_names:
 try:
     gg = 3
     norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
-    norm.vmin=-32656
-    norm.vmax=32656
-    (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
+    norm.autoscale(edges)
+    # norm.vmin=-32656
+    # norm.vmax=32656
+    # (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
 except ValueError as err:
     print("something went wrong first: ", err)
 
@@ -260,13 +262,18 @@ def waves_image(max_range, beta, field):
         cmap = colors.ListedColormap(color_scale_hex)
         # add options using the Options Builder
         try:
-            img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap, projection='polar',
-                colorbar = True,
-                #norm=colors.BoundaryNorm(edges, ncolors=len(edges)), # causes an error
-                #norm=norm
+            vmin = edges[0]
+            vmax = edges[len(edges)-1]
+            img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap,
+                clim=(vmin,vmax),
+                # projection='polar',
+                norm=norm,  # this is causing problems, with a vmin, vmax setting ValueError.
+                colorbar=True,
+                # rasterized=True, 
+                # shading='nearest'
                 ))
         except ValueError as err:
-            print("something went wrong: ", err)
+            pn.state.log(f'something went wrong: ') # , err)
     else:
         # use test data ..
         theta = np.linspace(0, 2 * np.pi, 360)
@@ -338,13 +345,14 @@ def waves_image_new(max_range, beta, field):
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    cmap = colors.ListedColormap(color_scale_hex)
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
     #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
     psm = ax.pcolormesh(Theta, R, Z, 
-        cmap=zcmap,
-        # norm=znorm,
-        norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+        cmap=cmap,
+        norm=norm,
+        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
         rasterized=True, shading='nearest')
     fig.colorbar(psm, ax=ax)
     # Add a title
