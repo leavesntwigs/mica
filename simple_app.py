@@ -37,6 +37,14 @@ for line in f.readlines():
     x = line.split()
     x11_color_name_map[x[0]]=x[1]
 
+def normalize_colormap(edges, colors):
+    nsteps = int(edges[-1] - edges[0] + 1)
+    new_edges = np.linspace(edges[0], edges[-1], nsteps)
+    new_colors = []
+    for i in range(0, len(edges)-1):
+        for ii in range(int(edges[i]), int(edges[i+1])):
+            new_colors.append(colors[i])
+    return (new_edges, new_colors)
 
 color_scale_base = "/Users/brenda/git/lrose-displays/lrose-displays-master/color_scales"
 file_name = "zdr_color"
@@ -74,9 +82,8 @@ try:
     gg = 3
     norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
     norm.autoscale(edges)
-    # norm.vmin=-32656
-    # norm.vmax=32656
-    # (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
+# TODO: the edges are NOT uniform the everything steps by 1 except the last goes 12 to 20
+    (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
 except ValueError as err:
     print("something went wrong first: ", err)
 
@@ -163,7 +170,7 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[100,200,300], beta=['/sweep_0'], field=['ZDR', 'DBZH', 'RHOHV'])
+        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=['/sweep_8'], field=['ZDR', 'DBZH', 'RHOHV'])
     else:
         if is_cfradial:
             datatree = xd.io.open_cfradial1_datatree(file_name[0])
@@ -226,28 +233,29 @@ def waves_image(max_range, beta, field):
         sweep = datatree[sweep_name] # ['/sweep_8']
         rvals = sweep.range
         azvals = sweep.azimuth
-        max_range = map_range_to_index(max_range, rvals,
+# TODO: sort out max_range: it has multiple meanings
+        max_range_index = map_range_to_index(max_range, rvals,
             sweep.ray_gate_spacing.data[0],
             sweep.ray_start_range.data[0])  # 100 # 300
         # theta = azvals
         # the azimuth need to be sorted into ascending order
         # theta = azvals #  np.linspace(0, 2 * np.pi, 720) # azvals
         theta = np.linspace(0, 2 * np.pi, 360)
-        r = rvals[:max_range]
+        r = rvals[:max_range_index]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
         ##                       shape = (|az|, |range|)
         #pn.state.log(f'fieldvar.shape = {fieldvar.shape}  ')
         ##                              (nrows, ncolumns)
         ## z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        #z2 = fieldvar.data[:,:max_range] 
+        #z2 = fieldvar.data[:,:max_range_index] 
         #pn.state.log(f'z2.shape = {z2.shape}  ')
         ##z = fieldvar.data 
 
 
-        z = fieldvar.data[:,:max_range]
+        z = fieldvar.data[:,:max_range_index]
         scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
-        z_bin_sort = np.zeros((360,max_range))
+        z_bin_sort = np.zeros((360,max_range_index))
         for i in range(0,360):
             raw_az = azvals[i]
             new_z_index = int(raw_az/scale_factor)
@@ -259,19 +267,28 @@ def waves_image(max_range, beta, field):
 
         Z = np.nan_to_num(z_bin_sort, nan=-32)
         # get the color map
-        cmap = colors.ListedColormap(color_scale_hex)
+        (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+        pn.state.log(f'edges_norm = {edges_norm} ')
+        pn.state.log(f'colors_norm = {colors_norm} ')
+        cmap = colors.ListedColormap(colors_norm)  # (color_scale_hex)
         # add options using the Options Builder
         try:
-            vmin = edges[0]
-            vmax = edges[len(edges)-1]
+            vmin = edges_norm[0]
+            vmax = edges_norm[-1]
             img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap,
-                clim=(vmin,vmax),
-                # projection='polar',
-                norm=norm,  # this is causing problems, with a vmin, vmax setting ValueError.
+                clim=(vmin, vmax),  # works if regularly spaced edges 
+                # norm=znorm, # error, ValueError: Passing a Normalize instance simultaneously with vmin/vmax is not supported.  Please pass vmin/vmax directly to the norm when creating it.
+                # norm=norm,
+                projection='polar',
+                # this is causing problems, with a vmin, vmax setting ValueError.
+                # cnorm=norm, # error, does NOT accept  <matplotlib.colors.BoundaryNorm object at 0x156ae9dc0>; valid options include: '[linear, log, eq_hist]'
                 colorbar=True,
                 # rasterized=True, 
-                # shading='nearest'
+                shading='auto'
                 ))
+            # alternative option 1: get the renderer
+            # alternative option 2: use a hook 
+            # alternative option 3: ? 
         except ValueError as err:
             pn.state.log(f'something went wrong: ') # , err)
     else:
@@ -322,18 +339,18 @@ def waves_image_new(max_range, beta, field):
         # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
         # # Add a title
         # plt.title('Quadmesh on Polar Coordinates true data')
-        max_range = 100
+        max_range_index = 100
 # the azimuth need to be sorted into ascending order
         theta = np.linspace(0, 2 * np.pi, 360) # azvals  
-        # r = np.linspace(0,1, max_range) 
-        r = rvals[:max_range]
+        # r = np.linspace(0,1, max_range_index) 
+        r = rvals[:max_range_index]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[field]
         #                              (nrows, ncolumns)
         #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        z = fieldvar.data[:,:max_range]
+        z = fieldvar.data[:,:max_range_index]
         scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
-        z_bin_sort = np.zeros((360,max_range))
+        z_bin_sort = np.zeros((360,max_range_index))
         for i in range(0,360):
             raw_az = azvals[i]
             new_z_index = int(raw_az/scale_factor)
@@ -345,13 +362,15 @@ def waves_image_new(max_range, beta, field):
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    cmap = colors.ListedColormap(color_scale_hex)
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
     #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
     psm = ax.pcolormesh(Theta, R, Z, 
         cmap=cmap,
-        norm=norm,
+        vmin=edges_norm[0], vmax=edges_norm[-1],
+        # norm=norm,
         # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
         rasterized=True, shading='nearest')
     fig.colorbar(psm, ax=ax)
