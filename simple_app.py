@@ -254,7 +254,7 @@ def waves_image(max_range, beta, field):
 
 
         z = fieldvar.data[:,:max_range_index]
-        scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
+        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
         z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
         for i in range(0,360):
             raw_az = azvals[i]
@@ -349,7 +349,7 @@ def waves_image_new(max_range, beta, field):
         #                              (nrows, ncolumns)
         #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
         z = fieldvar.data[:,:max_range_index]
-        scale_factor = 306/len(azvals) # or min_distance_between_rays * 360???
+        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
         z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
         for i in range(0,360):
             raw_az = azvals[i]
