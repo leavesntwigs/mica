@@ -284,11 +284,20 @@ def waves_image(max_range, beta, field):
                 # cnorm=norm, # error, does NOT accept  <matplotlib.colors.BoundaryNorm object at 0x156ae9dc0>; valid options include: '[linear, log, eq_hist]'
                 colorbar=True,
                 # rasterized=True, 
-                shading='auto'
+                shading='auto',
+                # invert_xaxis=True, start_angle=np.pi,
                 ))
             # alternative option 1: get the renderer
+            #fig = hv.render(img)
+            #fig.axes['set_theta_direction']=-1
+            # ax.set_theta_offset(np.pi / 2.0)
             # alternative option 2: use a hook 
-            # alternative option 3: ? 
+            # alternative option 3:  
+            img.opts(
+                backend_opts={
+                    "axes.set_theta_offset":np.pi / 2.0,
+                    "axes.set_theta_direction":-1,
+            })
         except ValueError as err:
             pn.state.log(f'something went wrong: ') # , err)
     else:
@@ -373,6 +382,9 @@ def waves_image_new(max_range, beta, field):
         # norm=norm,
         # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
         rasterized=True, shading='nearest')
+    # make the top 0 degrees and the angles go clockwise
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi / 2.0)
     fig.colorbar(psm, ax=ax)
     # Add a title
     plt.title('Quadmesh on Polar Coordinates HV: ' + field)
