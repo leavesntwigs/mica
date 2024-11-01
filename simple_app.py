@@ -202,7 +202,16 @@ def get_plot(field, datatree):
     return hv.Image(sweep.ZDR)
 #     xs, ys = np.meshgrid(rvals, azvals)
 #     return hv.Image(sweep[field], xs, ys)
-    
+   
+# this doesn't work.  Giving up on the coloring the range labels for embedded HoloViews plots 
+def hook(plot, element):
+    plot.handles['xaxis'].axis_label_text_color = 'red'
+    plot.handles['yaxis'].axis_label_text_color = 'white'
+    # legend.set_frame_on(False)
+    # ...
+# # rlabels = ax.get_ymajorticklabels()
+# for label in rlabels:
+    # label.set_color('white')
 
 #------
 # from DynamicMap tutorial ...
@@ -276,6 +285,7 @@ def waves_image(max_range, beta, field):
             vmin = edges_norm[0]
             vmax = edges_norm[-1]
             img = hv.QuadMesh((Theta, R, Z)).opts(opts.QuadMesh(cmap=cmap,
+                hooks=[hook],
                 clim=(vmin, vmax),  # works if regularly spaced edges 
                 # norm=znorm, # error, ValueError: Passing a Normalize instance simultaneously with vmin/vmax is not supported.  Please pass vmin/vmax directly to the norm when creating it.
                 # norm=norm,
@@ -285,18 +295,32 @@ def waves_image(max_range, beta, field):
                 colorbar=True,
                 # rasterized=True, 
                 shading='auto',
+                title="",
+                labelled=[],
                 # invert_xaxis=True, start_angle=np.pi,
                 ))
             # alternative option 1: get the renderer
-            #fig = hv.render(img)
+            # fig = hv.render(img)
             #fig.axes['set_theta_direction']=-1
             # ax.set_theta_offset(np.pi / 2.0)
+            # try to set the radial lines
+            # rtick_locs = np.arange(0,25000,5000)
+            # rtick_labels = ['%.1f'%r for r in rtick_locs]
+            # fig.axes.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white") # error AttributeError: 'list' object has no attribute 'set_rgrids'
             # alternative option 2: use a hook 
             # alternative option 3:  
+            # try to set the radial lines
+            rtick_locs = np.arange(0,25000,5000)
+            rtick_labels = ['%.1f'%r for r in rtick_locs]
+            #ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
             img.opts(
+                # hooks=[hook],
                 backend_opts={
                     "axes.set_theta_offset":np.pi / 2.0,
                     "axes.set_theta_direction":-1,
+                    "axes.yticklabels":rtick_labels,
+                    "axes.yticklabel_color":"white",
+                    #"axes.set_rgrids.labels":("one","two","three","four"),
             })
         except ValueError as err:
             pn.state.log(f'something went wrong: ') # , err)
@@ -385,6 +409,11 @@ def waves_image_new(max_range, beta, field):
     # make the top 0 degrees and the angles go clockwise
     ax.set_theta_direction(-1)
     ax.set_theta_offset(np.pi / 2.0)
+    # try to set the radial lines
+    rtick_locs = np.arange(0,25000,5000)
+    rtick_labels = ['%.1f'%r for r in rtick_locs]
+    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+    # 
     fig.colorbar(psm, ax=ax)
     # Add a title
     plt.title('Quadmesh on Polar Coordinates HV: ' + field)
