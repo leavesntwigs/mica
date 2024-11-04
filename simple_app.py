@@ -21,7 +21,9 @@ from holoviews import opts
 hv.extension('matplotlib')  # plotly, bokeh, matplotlib
 
 
-is_cfradial = True
+is_cfradial = False
+is_mdv = True
+
 
 # TODO: make a separate module/package for this ...
 import matplotlib.colors as colors
@@ -87,6 +89,13 @@ try:
 except ValueError as err:
     print("something went wrong first: ", err)
 
+# use for cartesian data
+def right_dim(var):
+    if len(var.dims) > 2:
+        return True
+    return False
+
+
 # NEXRAD
 # TODO: make a default datatree structure
 if is_cfradial:
@@ -94,10 +103,14 @@ if is_cfradial:
     filename = "cfrad.20240510_010615.273_to_20240510_011309.471_KBBX_SUR.nc"
     localfilename = dirname + "/" + filename
     datatree = xd.io.open_cfradial1_datatree(localfilename)
+elif is_mdv:
+    # cartesian data set
+    ds_cart = xr.open_dataset("/Users/brenda/data/for_mica/ncf_20161006_191339.nc")
 else:
     path = "/Users/brenda/data/for_mica/nexrad/"
     filename = "KBBX20240510_010615_V06"
     datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+
 
 # TODO: set default datatree and default filename, so that widgets display null
 # at initial start up or on error?
@@ -124,6 +137,12 @@ def get_field_names(datatree):
             fieldnames.append(k)
     return fieldnames
 #    return ['A', 'B', 'C']
+
+def get_field_names(dataset):
+# get field variables from a data set  ... 
+    moments_cart = list([k for (k, v) in dataset.data_vars.items() if right_dim(v)])
+    return moments_cart
+
 
 minimum_number_of_gates = 50
 def get_ranges(datatree):
@@ -172,21 +191,31 @@ def show_selected_file(file_name):
     if len(file_name) <= 0:
         return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=['/sweep_8'], field=['ZDR', 'DBZH', 'RHOHV'])
     else:
-        if is_cfradial:
-            datatree = xd.io.open_cfradial1_datatree(file_name[0])
-            pn.state.log(f'after cfradial datatree = {datatree.groups}  ')
-            # filter the groups by keyword sweep
+        if is_mdv:
+            # cartesian data set; use dataset structure
+            ds_cart = xr.open_dataset(file_name[0])
+            fields = get_field_names(ds_cart)
+            heights = ds_cart.z0.data # get_sweeps(ds_cart)
+            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
+                max_range=[100,200,300,400, 500, 600, 700],
+                beta=heights,  
+                field=fields)
         else:
-            datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
-        fields = get_field_names(datatree)
-        sweeps = get_sweeps(datatree)
-        print(datatree.groups)
-        sweep_names = [name for name in datatree.groups if 'sweep' in name] 
-        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
-            max_range=get_ranges(datatree), # [100,200,300,400, 500, 600, 700], 
-            beta=sweep_names,  # datatree.groups,
-            field=fields) # , dtree=datatree)
-        # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
+            # polar data; use datatree structure
+            if is_cfradial:
+                datatree = xd.io.open_cfradial1_datatree(file_name[0])
+                pn.state.log(f'after cfradial datatree = {datatree.groups}  ')
+            else:
+                datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
+            fields = get_field_names(datatree)
+            sweeps = get_sweeps(datatree)
+            print(datatree.groups)
+            sweep_names = [name for name in datatree.groups if 'sweep' in name] 
+            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
+                max_range=get_ranges(datatree), # [100,200,300,400, 500, 600, 700], 
+                beta=sweep_names,  # datatree.groups,
+                field=fields) # , dtree=datatree)
+            # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
 def show_status_open_file(dummy=1):
@@ -236,7 +265,36 @@ def waves_image_old(max_range, beta, field):  # , dtree=None):
         return hv.Image(np.sin(((ys/max_range)**max_range+beta)*xs))
 
 def waves_image(max_range, beta, field):
-    if (len(beta)):
+    if is_mdv:
+        # switch to dataset and cartesian coordinates
+        ds = ds_cart
+        height_index = 3
+        # Add a title
+        # plt.title('Quadmesh on Polar Coordinates true data')
+        max_range_index = 100
+        X0, Y0 = np.meshgrid(ds.x0.data, ds.y0.data)
+        fieldvar = ds.ZDR[0,height_index,:,:].data
+        Z = np.nan_to_num(fieldvar, nan=-32)
+
+        # get the color map
+        (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+        pn.state.log(f'edges_norm = {edges_norm} ')
+        pn.state.log(f'colors_norm = {colors_norm} ')
+        cmap = colors.ListedColormap(colors_norm)  # (color_scale_hex)
+        # add options using the Options Builder
+        vmin = edges_norm[0]
+        vmax = edges_norm[-1]
+        img = hv.QuadMesh((X0, Y0, Z)).opts(opts.QuadMesh(cmap=cmap,
+                #hooks=[hook],
+                clim=(vmin, vmax),  # works if regularly spaced edges
+                colorbar=True,
+                # rasterized=True,
+                shading='auto',
+                title="",
+                labelled=[],
+                ))
+
+    elif (len(beta)):
         # uses global datatree ...
         sweep_name = beta
         sweep = datatree[sweep_name] # ['/sweep_8']
@@ -335,13 +393,15 @@ def waves_image(max_range, beta, field):
 
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
-def waves_image_new(max_range, beta, field):
+def waves_image_new(max_range, beta, field, is_mdv=True):
+    if is_mdv:
+        # switch to dataset and cartesian coordinates
+        return waves_image_mdv(max_range, beta, field, ds_cart)
     # uses global datatree ...
     pn.state.log(f'beta =  ... ')
     sweep = datatree['/sweep_8']
     rvals = sweep.range
     azvals = sweep.azimuth
-    #return hv.Image(sweep.ZDR)
     # Generate data in polar coordinates
     test_data = False # True
     if test_data:
@@ -350,28 +410,6 @@ def waves_image_new(max_range, beta, field):
         R, Theta = np.meshgrid(r, theta)
         Z = np.sin(R) * np.cos(Theta)
     else:
-        # construct an xarray.DataArray ...
-        #sweep_number = 8
-        #sweep_start_ray_index = int(ds.sweep_start_ray_index.data[sweep_number])
-        #sweep_end_ray_index = int(ds.sweep_end_ray_index.data[sweep_number])
-        #sweep_azimuths = ds.azimuth.data[sweep_start_ray_index:sweep_end_ray_index+1]
-        #n_gates = int(ds.ray_n_gates.data[sweep_start_ray_index])
-        #gate_spacing = int(ds.ray_gate_spacing.data[sweep_start_ray_index])
-        #start_range = int(ds.ray_start_range.data[sweep_start_ray_index])
-        #end_gate = start_range+(n_gates*gate_spacing)
-        #sweep_range = np.linspace(start_range, end_gate, n_gates, endpoint=False)
-        ## ray_n_gates(time) float64
-        ## ray_gate_spacing(time)
-        ## VEL(n_points)
-        #npoints_start_ray_n = int(ds.ray_start_index.data[sweep_start_ray_index])
-        #npoints_end_ray_n = int(ds.ray_start_index.data[sweep_end_ray_index] + ds.ray_n_gates.data[sweep_start_ray_index])
-        #ray_data = ds.RHO.data[npoints_start_ray_n:npoints_end_ray_n]
-        # data_2d = np.reshape(ray_data, (len(sweep_azimuths), n_gates))
-        # sweep_dataarray = xr.DataArray(data_2d, coords=[sweep_azimuths, sweep_range], dims=["az", "range"])
-        # R, Theta = np.meshgrid(sweep_range, sweep_azimuths)
-        # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
-        # # Add a title
-        # plt.title('Quadmesh on Polar Coordinates true data')
         max_range_index = 100
 # the azimuth need to be sorted into ascending order
         theta = np.linspace(0, 2 * np.pi, 360) # azvals  
@@ -422,6 +460,62 @@ def waves_image_new(max_range, beta, field):
     # fig
     return fig 
 
+# use for cartesian data
+# ds = dataset
+# beta is the sweep number 
+def waves_image_mdv(max_range, beta, field, ds):
+    # uses dataset sturcture  ...
+    pn.state.log(f'beta =  ... ')
+    # Q: does xradar read cartesian files?
+    # ValueError: cannot rename 'sweep_number' because it is not a variable or coordinate in this dataset
+    # for cartesian data, it is about the z-level instead of the sweep
+    height_index = 3
+    if True:
+        x0 = ds
+        # sweep_dataarray = xr.DataArray(data_2d, coords=[sweep_azimuths, sweep_range], dims=["az", "range"])
+        # R, Theta = np.meshgrid(sweep_range, sweep_azimuths)
+        # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
+        # Add a title
+        # plt.title('Quadmesh on Polar Coordinates true data')
+# --- code for data tree possibly ---
+        max_range_index = 100
+# the azimuth need to be sorted into ascending order
+        X0, Y0 = np.meshgrid(ds.x0.data, ds.y0.data)
+        fieldvar = ds.ZDR[0,height_index,:,:].data
+        #                              (nrows, ncolumns)
+        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        # z = fieldvar.data[:,:max_range_index]
+        Z = np.nan_to_num(fieldvar, nan=-32)
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',)
+    #  Create a polar plot
+    fig, ax = plt.subplots(subplot_kw=dict())
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    # Plot the quadmesh
+    #            (X(column), Y(row), Z(row,column))
+    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    psm = ax.pcolormesh(X0, Y0, Z,
+        cmap=cmap,
+        vmin=edges_norm[0], vmax=edges_norm[-1],
+        # norm=norm,
+        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)),
+        rasterized=True, shading='nearest')
+    # try to set the radial lines
+    # rtick_locs = np.arange(0,25000,5000)
+    # rtick_labels = ['%.1f'%r for r in rtick_locs]
+    # ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+    #
+    fig.colorbar(psm, ax=ax)
+    # Add a title
+    plt.title('Quadmesh on Cartesian Coordinates HV: ' + field)
+    # Show the plot
+    #plt.show()
+    # fig
+    return fig
+
+
+
+
 def waves_image_new1(max_range, beta, field):
     # Generate data in polar coordinates
     theta = np.linspace(0, 2 * np.pi, 360)
@@ -445,7 +539,7 @@ dmap = hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field'])
 #-----
 
 my_column = pn.Column(
-    waves_image_new(1,0,'ZDR'),
+    waves_image_new(1,0,'ZDR', is_mdv),
     # dmap[1,2] + dmap.select(max_range=1, beta=2),
     card,
     pn.panel(pn.bind(show_selected_file, file_selector_widget), backend='matplotlib'), # , styles=pn.bind(styles, background))
