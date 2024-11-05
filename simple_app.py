@@ -189,13 +189,17 @@ def show_selected_field(field, x):
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
     if len(file_name) <= 0:
-        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=['/sweep_8'], field=['ZDR', 'DBZH', 'RHOHV'])
+        if is_mdv:
+           height_initial_value = [0]
+        else:
+           height_initial_value = ['/sweep_8']
+        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=height_initial_value, field=['ZDR', 'DBZH', 'RHOHV'])
     else:
         if is_mdv:
             # cartesian data set; use dataset structure
             ds_cart = xr.open_dataset(file_name[0])
             fields = get_field_names(ds_cart)
-            heights = ds_cart.z0.data # get_sweeps(ds_cart)
+            heights = np.arange(0,len(ds_cart.z0))  # [0,1,2,3] # ds_cart.z0.data # get_sweeps(ds_cart)
             return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
                 max_range=[100,200,300,400, 500, 600, 700],
                 beta=heights,  
@@ -268,7 +272,7 @@ def waves_image(max_range, beta, field):
     if is_mdv:
         # switch to dataset and cartesian coordinates
         ds = ds_cart
-        height_index = 3
+        height_index = beta 
         # Add a title
         # plt.title('Quadmesh on Polar Coordinates true data')
         max_range_index = 100
