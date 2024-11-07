@@ -34,7 +34,7 @@ dependencies:
     - jupyter
 ----
 
-using this environment ...
+the various environments ...
 
 mamba activate bokeh_heatmap_env
 jupyter lab
@@ -47,6 +47,10 @@ mamba create
 Numpy xarray xradar panel holoviews jupyter
 
 but, it still does not display an image!
+
+mamba create -n color_scales_env -c conda-forge matplotlib webcolors
+
+mamba create -n hv_panel_colors_geoviews_20241105 -c conda-forge numpy xarray xradar panel holoviews jupyter webcolors geoviews-core
 
 -----
 
