@@ -48,8 +48,8 @@ for line in f.readlines():
                 edges.append(float(x[0]))
             edges.append(float(x[1]))
 # add the ending edge
-# display(color_names)
-# display(edges)
+print(color_names)
+print(edges)
 # convert the X11 color names to hex
 color_scale_hex = []
 for cname in color_names:
@@ -69,6 +69,16 @@ try:
     (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
 except ValueError as err:
     print("something went wrong first: ", err)
+
+# A list of 2-element lists where the first element is the normalized color level value 
+#  (starting at 0 and ending at 1), and the second item is a valid color string. 
+#  (e.g. [[0, ‘green’], [0.5, ‘red’], [1.0, ‘rgb(0, 0, 255)’]])
+
+extent = edges[-1] - edges[0]
+normalized_edges = [ (i-edges[0])/extent for i in edges]
+#colorscale_stacked = np.column_stack((normalized_edges, color_names))
+#print(colorscale_stacked)
+
 
 # use for cartesian data
 def right_dim(var):
@@ -168,7 +178,6 @@ xs, ys = np.meshgrid(xvals, yvals)
 # 
 #
 
-# def map_z_to_colors(Z, colorscale):
 
 
 
@@ -217,7 +226,8 @@ fig = go.Figure(data=[
             #   'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
             # color=['red', 'green', 'blue', 'orange'],
             color=Z,
-            colorscale='viridis',
+            colorscale= [[0, 'green'], [0.5, 'red'], [1.0, 'rgb(0, 0, 255)']],
+            # colorscale='viridis',
             # autocolorscale
             # cmax, cmid, cmin
             symbol='square-x'
