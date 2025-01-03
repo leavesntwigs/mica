@@ -179,7 +179,29 @@ xs, ys = np.meshgrid(xvals, yvals)
 #
 
 
+# def map_z_to_colors(Z, edges, colors):
+#    replace with binary tree search
+#     for z in Z:
+#         found = False
+#         pivot = int(len(edges)/2)
+#         lower = 0
+#         upper = len(edges)-1
+#         while !found:
+ 
+def find_slot(z, edges):
 
+            if z < edges[pivot]:
+                if upper == pivot:
+                    return pivot
+                upper = pivot
+                pivot = int((pivot - lower)/2)
+            elif z > edges[pivot]:
+                if lower == pivot:
+                    return pivet
+                lower = pivot
+                pivot = int((upper - pivot)/2)
+            else:
+                return pivot
 
 # -------------- plotly ---------
 
@@ -189,16 +211,27 @@ import plotly.graph_objects as go
 sweep = datatree['/sweep_0']
 
 # Generate meshgrid data
-rvals = sweep.range
-azvals = sweep.azimuth
+max_range_index = 100
+every_other_r = 10
+every_other_az = 100
+rvals = sweep.range[::every_other_r]  # [:max_range_index]
+azvals = sweep.azimuth[0] # [::every_other_az]
+field = 'ZDR'
+fieldvar = sweep[field]
+#z = fieldvar.data[::every_other_az,::every_other_r]  # :max_range_index]
+z = fieldvar.data[0,::every_other_r]  # :max_range_index]
+# z = fieldvar.data
+R, Theta = np.meshgrid(rvals, azvals)
 
 print('type(rvals): ', type(rvals))
+print('shape z: ', fieldvar.data.shape)
+print('some z values: ', z[::100])
 
-r = np.linspace(0, 1, 10)
-theta = np.linspace(0, 2*np.pi, 20)
-R, Theta = np.meshgrid(r, theta)
-Z = np.sin(R) * np.cos(Theta)
-Z = [3,5,7,9]
+# r = np.linspace(0, 1, 10)
+# theta = np.linspace(0, 2*np.pi, 20)
+# R, Theta = np.meshgrid(r, theta)
+# Z = np.sin(R) * np.cos(Theta)
+# Z = [3,5,7,9]
  
 # map Z to colors
 #Z_colors = map_z_to_colors(Z, colorscale)
@@ -212,25 +245,28 @@ fig = go.Figure(data=[
     go.Scatterpolar(
 #        r=rvals,
 #        theta=azvals,
-        #r=R.flatten(),
-        #theta=Theta.flatten(),
-        r = [50000, 100000, 150000, 275000],
-        theta = [30, 60, 90, 130],
+        r=R.flatten(),
+        theta=Theta.flatten(),
+        #r = rvals,  # [50000, 100000, 150000, 275000],
+        #theta = azvals, # [30, 60, 90, 130],
         mode='markers',
         marker=dict(
-            size=15,
+            size=5,
             # set color to a numerical array 
             # color='blue',
             #color=Z_colors,
             #color=['rgb(93, 164, 214)', 'rgb(255, 144, 14)',
             #   'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
             # color=['red', 'green', 'blue', 'orange'],
-            color=Z,
+            color=z,  # Z,
             colorscale= [[0, 'green'], [0.5, 'red'], [1.0, 'rgb(0, 0, 255)']],
+            cmin = -4, cmax = 20, # this OR cauto; still produces gradient colorscale
+            # cauto = True,           # this OR cmin & cmax; still produces gradient colorscale
             # colorscale='viridis',
             # autocolorscale
             # cmax, cmid, cmin
-            symbol='square-x'
+            symbol='square-x',
+            showscale=True,
             ## color should be based on a colorscale
         )
     )
