@@ -239,15 +239,23 @@ app.layout = dbc.Container([
                 id='category',
                 value='Number of Solar Plants',
                 clearable=False,
-                options=field_names_8) # get_field_names(datatree))
-                # options=['ZDR', 'DBZ']) # get_field_names(datatree))
-                # options=df.columns[1:])
-        ], width=4)
+                options=field_names_8) 
+        ], width=4),
+        dbc.Col([
+            html.Img(id='bar-graph-matplotlib')
+        ], width=12)
     ]),
 
     dbc.Row([
         dbc.Col([
-            html.Img(id='bar-graph-matplotlib')
+            dcc.Dropdown(
+                id='category2',
+                value='Number of Solar Plants',
+                clearable=False,
+                options=field_names_8)
+        ], width=4),
+        dbc.Col([
+            html.Img(id='bar-graph-matplotlib2')
         ], width=12)
     ]),
 
@@ -269,10 +277,8 @@ app.layout = dbc.Container([
 
 # Create interactivity between dropdown component and graph
 @app.callback(
-    Output(component_id='bar-graph-matplotlib', component_property='src'),
-    Output('bar-graph-plotly', 'figure'),
-    Output('grid', 'defaultColDef'),
-    Input('category', 'value'),
+    Output(component_id='bar-graph-matplotlib2', component_property='src'),
+    Input('category2', 'value'),
 )
 
 #def plot_data_orig(selected_yaxis):
@@ -312,6 +318,87 @@ app.layout = dbc.Container([
 
 # HERE datatree must not be sent!!! 
 #
+
+def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+    # uses global datatree ...
+    sweep = datatree['/sweep_8']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    # Generate data in polar coordinates
+    test_data = False # True
+    if test_data:
+        theta = np.linspace(0, 2 * np.pi, 360)
+        r = np.linspace(0, 1, 100)
+        R, Theta = np.meshgrid(r, theta)
+        Z = np.sin(R) * np.cos(Theta)
+    else:
+        max_range_index = 100
+# the azimuth need to be sorted into ascending order
+        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
+        # r = np.linspace(0,1, max_range_index) 
+        r = rvals[:max_range_index]
+        R, Theta = np.meshgrid(r, theta)
+        fieldvar = sweep[selected_field] # sweep[field]
+        #                              (nrows, ncolumns)
+        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        z = fieldvar.data[:,:max_range_index]
+        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
+        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
+        for i in range(0,360):
+            raw_az = azvals[i]
+            new_z_index = int(raw_az/scale_factor)
+            if (new_z_index >= 360):
+                new_z_index -= 360
+            z_bin_sort[new_z_index] = z[i]
+        Z = np.nan_to_num(z_bin_sort, nan=-32)
+        # Z = np.sin(R) * np.cos(Theta)
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
+    #  Create a polar plot
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    # Plot the quadmesh
+    #            (X(column), Y(row), Z(row,column))
+    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    psm = ax.pcolormesh(Theta, R, Z, 
+        cmap=cmap,
+        vmin=edges_norm[0], vmax=edges_norm[-1],
+        # norm=norm,
+        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+        rasterized=True, shading='nearest')
+    # make the top 0 degrees and the angles go clockwise
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi / 2.0)
+    # try to set the radial lines
+    rtick_locs = np.arange(0,25000,5000)
+    rtick_labels = ['%.1f'%r for r in rtick_locs]
+    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+    # 
+    fig.colorbar(psm, ax=ax)
+    # Add a title
+    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
+
+
+    # Save it to a temporary buffer.
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    # Embed the result in the html output.
+    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    fig_bar_matplotlib2 = f'data:image/png;base64,{fig_data}'
+
+    print('**** done with polar 2 ***')
+
+    return fig_bar_matplotlib2
+
+
+# Create interactivity between dropdown component and graph
+@app.callback(
+    Output(component_id='bar-graph-matplotlib', component_property='src'),
+    Output('bar-graph-plotly', 'figure'),
+    Output('grid', 'defaultColDef'),
+    Input('category', 'value'),
+)
+
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
 def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
