@@ -90,6 +90,21 @@ def right_dim(var):
         return True
     return False
 
+def get_field_names(datatree):
+    print('inside get_field_names')
+# get field variables from a datatree ...
+    sweep0 = datatree["/sweep_0"] # TODO make this more general and robust
+    #print("dims: ", sweep0.dims)
+    print("data_vars: ", sweep0.data_vars)
+    sweep0_data_vars = sweep0.data_vars
+    fieldnames = []
+    for k, v in sweep0_data_vars.items():
+        #print(k, len(v.dims))
+        if len(v.dims) >= 2:
+            fieldnames.append(k)
+    return fieldnames
+#     return ['A', 'B', 'C']
+
 
 # NEXRAD
 # TODO: make a default datatree structure
@@ -98,6 +113,10 @@ if is_cfradial:
     filename = "cfrad.20240510_010615.273_to_20240510_011309.471_KBBX_SUR.nc"
     localfilename = dirname + "/" + filename
     datatree = xd.io.open_cfradial1_datatree(localfilename)
+    print('before blue')
+    field_names_8 = get_field_names(datatree)
+    print('field_names_8 = ', field_names_8)
+    print('after blue')
 elif is_mdv:
     # cartesian data set
     ds_cart = xr.open_dataset("/Users/brenda/data/for_mica/ncf_20161006_191339.nc")
@@ -119,24 +138,10 @@ def get_datatree(file_full_path):
     return new_datatree
     
 
-def get_field_names(datatree):
-# get field variables from a datatree ...
-    sweep0 = datatree["/sweep_0"] # TODO make this more general and robust
-    #print("dims: ", sweep0.dims)
-    #print("data_vars: ", sweep0.data_vars)
-    sweep0_data_vars = sweep0.data_vars
-    fieldnames = []
-    for k, v in sweep0_data_vars.items():
-        #print(k, len(v.dims))
-        if len(v.dims) >= 2:
-            fieldnames.append(k)
-    return fieldnames
-#    return ['A', 'B', 'C']
-
-def get_field_names(dataset):
-# get field variables from a data set  ... 
-    moments_cart = list([k for (k, v) in dataset.data_vars.items() if right_dim(v)])
-    return moments_cart
+#def get_field_names(dataset):
+## get field variables from a data set  ... 
+#    moments_cart = list([k for (k, v) in dataset.data_vars.items() if right_dim(v)])
+#    return moments_cart
 
 
 minimum_number_of_gates = 50
@@ -216,20 +221,11 @@ def show_selected_file(file_name):
             # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
-def show_status_open_file(dummy=1):
-    return f'reading ...'
-
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
-def get_plot(field, datatree):
-    sweep = datatree['/sweep_0']
-    rvals = sweep.range
-    azvals = sweep.azimuth
-    return hv.Image(sweep.ZDR)
-#     xs, ys = np.meshgrid(rvals, azvals)
-#     return hv.Image(sweep[field], xs, ys)
-   
+
+print('result of get_field_names: ', get_field_names(datatree)) 
 
 # --------- from matplotlib-dash -----
 
@@ -243,7 +239,9 @@ app.layout = dbc.Container([
                 id='category',
                 value='Number of Solar Plants',
                 clearable=False,
-                options=df.columns[1:])
+                options=field_names_8) # get_field_names(datatree))
+                # options=['ZDR', 'DBZ']) # get_field_names(datatree))
+                # options=df.columns[1:])
         ], width=4)
     ]),
 
@@ -316,7 +314,7 @@ app.layout = dbc.Container([
 #
 
 # Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
-def plot_data(selected_yaxis, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     # uses global datatree ...
     sweep = datatree['/sweep_8']
     rvals = sweep.range
@@ -335,7 +333,7 @@ def plot_data(selected_yaxis, max_range=100, beta="sweep_x", field='ZDR', is_mdv
         # r = np.linspace(0,1, max_range_index) 
         r = rvals[:max_range_index]
         R, Theta = np.meshgrid(r, theta)
-        fieldvar = sweep[field]
+        fieldvar = sweep[selected_field] # sweep[field]
         #                              (nrows, ncolumns)
         #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
         z = fieldvar.data[:,:max_range_index]
@@ -373,7 +371,7 @@ def plot_data(selected_yaxis, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     # 
     fig.colorbar(psm, ax=ax)
     # Add a title
-    plt.title('Quadmesh on Polar Coordinates HV: ' + field)
+    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
 
 
     # Save it to a temporary buffer.
@@ -383,7 +381,10 @@ def plot_data(selected_yaxis, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
     fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
 
+    print('**** done with polar ***')
+
     # Build the Plotly figure
+    selected_yaxis = 'Number of Solar Plants'
     fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
 
     my_cellStyle = {
