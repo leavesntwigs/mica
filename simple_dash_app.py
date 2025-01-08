@@ -1,7 +1,7 @@
-from dash import Dash, html, dcc, Input, Output  
+from dash import Dash, html, dcc, Input, Output, callback
 import plotly.express as px
-import dash_ag_grid as dag                       
-import dash_bootstrap_components as dbc          
+# import dash_ag_grid as dag                       
+# import dash_bootstrap_components as dbc          
 import pandas as pd                              
 
 import matplotlib                                
@@ -15,7 +15,14 @@ import xradar as xd
 #import cmweather
 import numpy as np
 
-df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
+# df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+df = pd.read_csv('https://plotly.github.io/datasets/country_indicators.csv')
+
 
 is_cfradial = True
 is_mdv = False
@@ -165,6 +172,9 @@ def get_sweeps(datatree):
 # get the number of sweeps from a datatree ...
     return len(datatree.groups) - 1
 
+# '/sweep_8'
+sweep_names = ['1','2','3']
+
 #file_selector_widget = pn.widgets.FileSelector('~/data')
 
 #card = pn.Card(file_selector_widget, title='Step 1. Choose Data File', styles={'background': 'WhiteSmoke'})
@@ -227,99 +237,8 @@ def styles(background):
 
 print('result of get_field_names: ', get_field_names(datatree)) 
 
-# --------- from matplotlib-dash -----
-
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.layout = dbc.Container([
-    html.H1("Interactive Matplotlib with Dash", className='mb-2', style={'textAlign':'center'}),
-
-    dbc.Row([
-        dbc.Col([
-            dcc.Dropdown(
-                id='category',
-                value='Number of Solar Plants',
-                clearable=False,
-                options=field_names_8) 
-        ], width=4),
-        dbc.Col([
-            html.Img(id='bar-graph-matplotlib')
-        ], width=12)
-    ]),
-
-    dbc.Row([
-        dbc.Col([
-            dcc.Dropdown(
-                id='category2',
-                value='Number of Solar Plants',
-                clearable=False,
-                options=field_names_8)
-        ], width=4),
-        dbc.Col([
-            html.Img(id='bar-graph-matplotlib2')
-        ], width=12)
-    ]),
-
-    dbc.Row([
-        dbc.Col([
-            dcc.Graph(id='bar-graph-plotly', figure={})
-        ], width=12, md=6),
-        dbc.Col([
-            dag.AgGrid(
-                id='grid',
-                rowData=df.to_dict("records"),
-                columnDefs=[{"field": i} for i in df.columns],
-                columnSize="sizeToFit",
-            )
-        ], width=12, md=6),
-    ], className='mt-4'),
-
-])
-
-# Create interactivity between dropdown component and graph
-@app.callback(
-    Output(component_id='bar-graph-matplotlib2', component_property='src'),
-    Input('category2', 'value'),
-)
-
-#def plot_data_orig(selected_yaxis):
-#
-#    # Build the matplotlib figure
-#    fig = plt.figure(figsize=(14, 5))
-#    plt.bar(df['State'], df[selected_yaxis])
-#    plt.ylabel(selected_yaxis)
-#    plt.xticks(rotation=30)
-#
-#    # Save it to a temporary buffer.
-#    buf = BytesIO()
-#    fig.savefig(buf, format="png")
-#    # Embed the result in the html output.
-#    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
-#    fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
-#
-#    # Build the Plotly figure
-#    fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
-#
-#    my_cellStyle = {
-#        "styleConditions": [
-#            {
-#                "condition": f"params.colDef.field == '{selected_yaxis}'",
-#                "style": {"backgroundColor": "#d3d3d3"},
-#            },
-#            {   "condition": f"params.colDef.field != '{selected_yaxis}'",
-#                "style": {"color": "black"}
-#            },
-#        ]
-#    }
-#
-#    return fig_bar_matplotlib, fig_bar_plotly, {'cellStyle': my_cellStyle}
-
-
-# -------- end of matplotlib-dash --------
-
-# HERE datatree must not be sent!!! 
-#
-
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+    print("inside green")
     # uses global datatree ...
     sweep = datatree['/sweep_8']
     rvals = sweep.range
@@ -334,8 +253,8 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     else:
         max_range_index = 100
 # the azimuth need to be sorted into ascending order
-        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
-        # r = np.linspace(0,1, max_range_index) 
+        theta = np.linspace(0, 2 * np.pi, 360) # azvals 
+        # r = np.linspace(0,1, max_range_index)
         r = rvals[:max_range_index]
         R, Theta = np.meshgrid(r, theta)
         fieldvar = sweep[selected_field] # sweep[field]
@@ -352,7 +271,7 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
             z_bin_sort[new_z_index] = z[i]
         Z = np.nan_to_num(z_bin_sort, nan=-32)
         # Z = np.sin(R) * np.cos(Theta)
-    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',)
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
@@ -360,11 +279,11 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
     #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
-    psm = ax.pcolormesh(Theta, R, Z, 
+    psm = ax.pcolormesh(Theta, R, Z,
         cmap=cmap,
         vmin=edges_norm[0], vmax=edges_norm[-1],
         # norm=norm,
-        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)),
         rasterized=True, shading='nearest')
     # make the top 0 degrees and the angles go clockwise
     ax.set_theta_direction(-1)
@@ -373,7 +292,7 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     rtick_locs = np.arange(0,25000,5000)
     rtick_labels = ['%.1f'%r for r in rtick_locs]
     ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
-    # 
+    #
     fig.colorbar(psm, ax=ax)
     # Add a title
     plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
@@ -391,157 +310,515 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     return fig_bar_matplotlib2
 
 
-# Create interactivity between dropdown component and graph
-@app.callback(
-    Output(component_id='bar-graph-matplotlib', component_property='src'),
-    Output('bar-graph-plotly', 'figure'),
-    Output('grid', 'defaultColDef'),
-    Input('category', 'value'),
-)
+
+# --------- from matplotlib-dash -----
+# -------- integrate from Part3: interactive Graphing and Crossfiltering ----
 
 
-# Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    # uses global datatree ...
-    sweep = datatree['/sweep_8']
-    rvals = sweep.range
-    azvals = sweep.azimuth
-    # Generate data in polar coordinates
-    test_data = False # True
-    if test_data:
-        theta = np.linspace(0, 2 * np.pi, 360)
-        r = np.linspace(0, 1, 100)
-        R, Theta = np.meshgrid(r, theta)
-        Z = np.sin(R) * np.cos(Theta)
-    else:
-        max_range_index = 100
-# the azimuth need to be sorted into ascending order
-        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
-        # r = np.linspace(0,1, max_range_index) 
-        r = rvals[:max_range_index]
-        R, Theta = np.meshgrid(r, theta)
-        fieldvar = sweep[selected_field] # sweep[field]
-        #                              (nrows, ncolumns)
-        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        z = fieldvar.data[:,:max_range_index]
-        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
-        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
-        for i in range(0,360):
-            raw_az = azvals[i]
-            new_z_index = int(raw_az/scale_factor)
-            if (new_z_index >= 360):
-                new_z_index -= 360
-            z_bin_sort[new_z_index] = z[i]
-        Z = np.nan_to_num(z_bin_sort, nan=-32)
-        # Z = np.sin(R) * np.cos(Theta)
-    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
-    #  Create a polar plot
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
-    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
-    # Plot the quadmesh
-    #            (X(column), Y(row), Z(row,column))
-    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
-    psm = ax.pcolormesh(Theta, R, Z, 
-        cmap=cmap,
-        vmin=edges_norm[0], vmax=edges_norm[-1],
-        # norm=norm,
-        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
-        rasterized=True, shading='nearest')
-    # make the top 0 degrees and the angles go clockwise
-    ax.set_theta_direction(-1)
-    ax.set_theta_offset(np.pi / 2.0)
-    # try to set the radial lines
-    rtick_locs = np.arange(0,25000,5000)
-    rtick_labels = ['%.1f'%r for r in rtick_locs]
-    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
-    # 
-    fig.colorbar(psm, ax=ax)
-    # Add a title
-    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
+app.layout = html.Div([
+    html.Div([
+
+        html.Div([
+            dcc.Dropdown(
+                df['Indicator Name'].unique(),
+                'Fertility rate, total (births per woman)',
+                id='crossfilter-xaxis-column',
+            ),
+            dcc.RadioItems(
+                ['Linear', 'Log'],
+                'Linear',
+                id='crossfilter-xaxis-type',
+                labelStyle={'display': 'inline-block', 'marginTop': '5px'}
+            )
+        ],
+        style={'width': '49%', 'display': 'inline-block'}),
+
+        html.Div([
+            dcc.Dropdown(
+                df['Indicator Name'].unique(),
+                'Life expectancy at birth, total (years)',
+                id='crossfilter-yaxis-column'
+            ),
+            dcc.RadioItems(
+                ['Linear', 'Log'],
+                'Linear',
+                id='crossfilter-yaxis-type',
+                labelStyle={'display': 'inline-block', 'marginTop': '5px'}
+            )
+        ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
+    ], style={
+        'padding': '10px 5px'
+    }),
+
+    html.Div([
+        dcc.Graph(
+            id='crossfilter-indicator-scatter',
+            hoverData={'points': [{'customdata': 'Japan'}]}
+        )
+    ], style={'width': '49%', 'display': 'inline-block', 'padding': '0 20'}),
+    html.Div([
+        dcc.Graph(id='x-time-series'),
+        dcc.Graph(id='y-time-series'),
+    ], style={'display': 'inline-block', 'width': '49%'}),
+
+    html.Div(dcc.Slider(
+        df['Year'].min(),
+        df['Year'].max(),
+        step=None,
+        id='crossfilter-year--slider',
+        value=df['Year'].max(),
+        marks={str(year): str(year) for year in df['Year'].unique()}
+    ), style={'width': '49%', 'padding': '0px 20px 20px 20px'})
+])
 
 
-    # Save it to a temporary buffer.
-    buf = BytesIO()
-    fig.savefig(buf, format="png")
-    # Embed the result in the html output.
-    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
-    fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
+@callback(
+    Output('crossfilter-indicator-scatter', 'figure'),
+    Input('crossfilter-xaxis-column', 'value'),
+    Input('crossfilter-yaxis-column', 'value'),
+    Input('crossfilter-xaxis-type', 'value'),
+    Input('crossfilter-yaxis-type', 'value'),
+    Input('crossfilter-year--slider', 'value'))
+def update_graph(xaxis_column_name, yaxis_column_name,
+                 xaxis_type, yaxis_type,
+                 year_value):
+    dff = df[df['Year'] == year_value]
 
-    print('**** done with polar ***')
+    fig = px.scatter(x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
+            y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
+            hover_name=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name']
+            )
 
-    # Build the Plotly figure
-    selected_yaxis = 'Number of Solar Plants'
-    fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
+    fig.update_traces(customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'])
 
-    my_cellStyle = {
-        "styleConditions": [
-            {
-                "condition": f"params.colDef.field == '{selected_yaxis}'",
-                "style": {"backgroundColor": "#d3d3d3"},
-            },
-            {   "condition": f"params.colDef.field != '{selected_yaxis}'",
-                "style": {"color": "black"}
-            },
-        ]
-    }
+    fig.update_xaxes(title=xaxis_column_name, type='linear' if xaxis_type == 'Linear' else 'log')
 
-    return fig_bar_matplotlib, fig_bar_plotly, {'cellStyle': my_cellStyle}
+    fig.update_yaxes(title=yaxis_column_name, type='linear' if yaxis_type == 'Linear' else 'log')
 
-# use for cartesian data
-# ds = dataset
-# beta is the sweep number 
-def waves_image_mdv(max_range, beta, field, ds):
-    # uses dataset sturcture  ...
-    # Q: does xradar read cartesian files?
-    # ValueError: cannot rename 'sweep_number' because it is not a variable or coordinate in this dataset
-    # for cartesian data, it is about the z-level instead of the sweep
-    height_index = 3
-    if True:
-        x0 = ds
-        # sweep_dataarray = xr.DataArray(data_2d, coords=[sweep_azimuths, sweep_range], dims=["az", "range"])
-        # R, Theta = np.meshgrid(sweep_range, sweep_azimuths)
-        # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
-        # Add a title
-        # plt.title('Quadmesh on Polar Coordinates true data')
-# --- code for data tree possibly ---
-        max_range_index = 100
-# the azimuth need to be sorted into ascending order
-        X0, Y0 = np.meshgrid(ds.x0.data, ds.y0.data)
-        fieldvar = ds.ZDR[0,height_index,:,:].data
-        #                              (nrows, ncolumns)
-        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-        # z = fieldvar.data[:,:max_range_index]
-        Z = np.nan_to_num(fieldvar, nan=-32)
-    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',)
-    #  Create a polar plot
-    fig, ax = plt.subplots(subplot_kw=dict())
-    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
-    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
-    # Plot the quadmesh
-    #            (X(column), Y(row), Z(row,column))
-    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
-    psm = ax.pcolormesh(X0, Y0, Z,
-        cmap=cmap,
-        vmin=edges_norm[0], vmax=edges_norm[-1],
-        # norm=norm,
-        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)),
-        rasterized=True, shading='nearest')
-    # try to set the radial lines
-    # rtick_locs = np.arange(0,25000,5000)
-    # rtick_labels = ['%.1f'%r for r in rtick_locs]
-    # ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
-    #
-    fig.colorbar(psm, ax=ax)
-    # Add a title
-    plt.title('Quadmesh on Cartesian Coordinates HV: ' + field)
-    # Show the plot
-    #plt.show()
-    # fig
+    fig.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
+
     return fig
 
-#-----
+
+def create_time_series(dff, axis_type, title):
+
+    fig = px.scatter(dff, x='Year', y='Value')
+
+    fig.update_traces(mode='lines+markers')
+
+    fig.update_xaxes(showgrid=False)
+
+    fig.update_yaxes(type='linear' if axis_type == 'Linear' else 'log')
+
+    fig.add_annotation(x=0, y=0.85, xanchor='left', yanchor='bottom',
+                       xref='paper', yref='paper', showarrow=False, align='left',
+                       text=title)
+
+    fig.update_layout(height=225, margin={'l': 20, 'b': 30, 'r': 10, 't': 10})
+
+    return fig
+
+
+@callback(
+    Output('x-time-series', 'figure'),
+    Input('crossfilter-indicator-scatter', 'hoverData'),
+    Input('crossfilter-xaxis-column', 'value'),
+    Input('crossfilter-xaxis-type', 'value'))
+def update_x_timeseries(hoverData, xaxis_column_name, axis_type):
+    country_name = hoverData['points'][0]['customdata']
+    dff = df[df['Country Name'] == country_name]
+    dff = dff[dff['Indicator Name'] == xaxis_column_name]
+    title = '<b>{}</b><br>{}'.format(country_name, xaxis_column_name)
+    return create_time_series(dff, axis_type, title)
+
+
+@callback(
+    Output('y-time-series', 'figure'),
+    Input('crossfilter-indicator-scatter', 'hoverData'),
+    Input('crossfilter-yaxis-column', 'value'),
+    Input('crossfilter-yaxis-type', 'value'))
+def update_y_timeseries(hoverData, yaxis_column_name, axis_type):
+    dff = df[df['Country Name'] == hoverData['points'][0]['customdata']]
+    dff = dff[dff['Indicator Name'] == yaxis_column_name]
+    return create_time_series(dff, axis_type, yaxis_column_name)
+
 
 if __name__ == '__main__':
-    app.run_server(debug=False, port=8002)
+    app.run(debug=True)
 
+
+
+#app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+#app.layout = html.Div([
+#    html.H1("Interactive Matplotlib with Dash", className='mb-2', style={'textAlign':'center'}),
+#
+#    dbc.Row([
+#        dbc.Col([
+#            dcc.Dropdown(
+#                id='sweep_height',
+#                value='0',
+#                clearable=False,
+#                options=sweep_names) 
+#        ], width=4),
+#    ]),
+#
+#    dbc.Row([
+#        dbc.Col([
+#            dcc.Dropdown(
+#                id='category',
+#                value='ZDR',
+#                clearable=False,
+#                options=field_names_8) 
+#        ], width=4),
+#        dbc.Col([
+#            html.Img(id='bar-graph-matplotlib')
+#        ], width=12)
+#    ]),
+#
+#    dbc.Row([
+#        dbc.Col([
+#            dcc.Dropdown(
+#                id='category2',
+#                value='VEL',
+#                clearable=False,
+#                options=field_names_8)
+#        ], width=4),
+#        dbc.Col([
+#            html.Img(id='bar-graph-matplotlib2')
+#        ], width=12)
+#    ]),
+#    
+#    dbc.Row([
+#        dbc.Col([
+#            dcc.Graph(id='bar-graph-plotly', figure={})
+#        ], width=12, md=6),
+#        dbc.Col([
+#            dag.AgGrid(
+#                id='grid',
+#                rowData=df.to_dict("records"),
+#                columnDefs=[{"field": i} for i in df.columns],
+#                columnSize="sizeToFit",
+#            )
+#        ], width=12, md=6),
+#    ], className='mt-4'),
+#
+#])
+#
+## Create interactivity between dropdown component and graph
+#
+#
+##@app.callback(
+##    Output(component_id='bar-graph-matplotlib2', component_property='src'),
+##    Output(component_id='bar-graph-matplotlib', component_property='src'),
+##    Input('sweep_height', 'value'),
+##)
+#
+#@app.callback(
+#    Output(component_id='bar-graph-matplotlib2', component_property='src'),
+#    Input('category2', 'value'),
+#)
+#
+##def plot_data_orig(selected_yaxis):
+##
+##    # Build the matplotlib figure
+##    fig = plt.figure(figsize=(14, 5))
+##    plt.bar(df['State'], df[selected_yaxis])
+##    plt.ylabel(selected_yaxis)
+##    plt.xticks(rotation=30)
+##
+##    # Save it to a temporary buffer.
+##    buf = BytesIO()
+##    fig.savefig(buf, format="png")
+##    # Embed the result in the html output.
+##    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+##    fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
+##
+##    # Build the Plotly figure
+##    fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
+##
+##    my_cellStyle = {
+##        "styleConditions": [
+##            {
+##                "condition": f"params.colDef.field == '{selected_yaxis}'",
+##                "style": {"backgroundColor": "#d3d3d3"},
+##            },
+##            {   "condition": f"params.colDef.field != '{selected_yaxis}'",
+##                "style": {"color": "black"}
+##            },
+##        ]
+##    }
+##
+##    return fig_bar_matplotlib, fig_bar_plotly, {'cellStyle': my_cellStyle}
+#
+#
+## -------- end of matplotlib-dash --------
+#
+## HERE datatree must not be sent!!! 
+##
+#
+#def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+#    print("inside green")
+#    # uses global datatree ...
+#    sweep = datatree['/sweep_8']
+#    rvals = sweep.range
+#    azvals = sweep.azimuth
+#    # Generate data in polar coordinates
+#    test_data = False # True
+#    if test_data:
+#        theta = np.linspace(0, 2 * np.pi, 360)
+#        r = np.linspace(0, 1, 100)
+#        R, Theta = np.meshgrid(r, theta)
+#        Z = np.sin(R) * np.cos(Theta)
+#    else:
+#        max_range_index = 100
+## the azimuth need to be sorted into ascending order
+#        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
+#        # r = np.linspace(0,1, max_range_index) 
+#        r = rvals[:max_range_index]
+#        R, Theta = np.meshgrid(r, theta)
+#        fieldvar = sweep[selected_field] # sweep[field]
+#        #                              (nrows, ncolumns)
+#        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+#        z = fieldvar.data[:,:max_range_index]
+#        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
+#        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
+#        for i in range(0,360):
+#            raw_az = azvals[i]
+#            new_z_index = int(raw_az/scale_factor)
+#            if (new_z_index >= 360):
+#                new_z_index -= 360
+#            z_bin_sort[new_z_index] = z[i]
+#        Z = np.nan_to_num(z_bin_sort, nan=-32)
+#        # Z = np.sin(R) * np.cos(Theta)
+#    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
+#    #  Create a polar plot
+#    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+#    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+#    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+#    # Plot the quadmesh
+#    #            (X(column), Y(row), Z(row,column))
+#    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+#    psm = ax.pcolormesh(Theta, R, Z, 
+#        cmap=cmap,
+#        vmin=edges_norm[0], vmax=edges_norm[-1],
+#        # norm=norm,
+#        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+#        rasterized=True, shading='nearest')
+#    # make the top 0 degrees and the angles go clockwise
+#    ax.set_theta_direction(-1)
+#    ax.set_theta_offset(np.pi / 2.0)
+#    # try to set the radial lines
+#    rtick_locs = np.arange(0,25000,5000)
+#    rtick_labels = ['%.1f'%r for r in rtick_locs]
+#    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+#    # 
+#    fig.colorbar(psm, ax=ax)
+#    # Add a title
+#    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
+#
+#
+#    # Save it to a temporary buffer.
+#    buf = BytesIO()
+#    fig.savefig(buf, format="png")
+#    # Embed the result in the html output.
+#    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+#    fig_bar_matplotlib2 = f'data:image/png;base64,{fig_data}'
+#
+#    print('**** done with polar 2 ***')
+#
+#    return fig_bar_matplotlib2
+#
+#
+## Create interactivity between dropdown component and graph
+#@app.callback(
+#    Output(component_id='bar-graph-matplotlib', component_property='src'),
+#    Output('bar-graph-plotly', 'figure'),
+#    Output('grid', 'defaultColDef'),
+#    Input('category', 'value'),
+#)
+#
+#
+## Now, integrate the real data into this function, then into holoviews wrapper of quadmesh polar
+#def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+#    print('inside orange')
+#    # uses global datatree ...
+#    sweep = datatree['/sweep_8']
+#    rvals = sweep.range
+#    azvals = sweep.azimuth
+#    # Generate data in polar coordinates
+#    test_data = False # True
+#    if test_data:
+#        theta = np.linspace(0, 2 * np.pi, 360)
+#        r = np.linspace(0, 1, 100)
+#        R, Theta = np.meshgrid(r, theta)
+#        Z = np.sin(R) * np.cos(Theta)
+#    else:
+#        max_range_index = 100
+## the azimuth need to be sorted into ascending order
+#        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
+#        # r = np.linspace(0,1, max_range_index) 
+#        r = rvals[:max_range_index]
+#        R, Theta = np.meshgrid(r, theta)
+#        fieldvar = sweep[selected_field] # sweep[field]
+#        #                              (nrows, ncolumns)
+#        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+#        z = fieldvar.data[:,:max_range_index]
+#        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
+#        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
+#        for i in range(0,360):
+#            raw_az = azvals[i]
+#            new_z_index = int(raw_az/scale_factor)
+#            if (new_z_index >= 360):
+#                new_z_index -= 360
+#            z_bin_sort[new_z_index] = z[i]
+#        Z = np.nan_to_num(z_bin_sort, nan=-32)
+#        # Z = np.sin(R) * np.cos(Theta)
+#    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
+#    #  Create a polar plot
+#    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+#    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+#    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+#    # Plot the quadmesh
+#    #            (X(column), Y(row), Z(row,column))
+#    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+#    psm = ax.pcolormesh(Theta, R, Z, 
+#        cmap=cmap,
+#        vmin=edges_norm[0], vmax=edges_norm[-1],
+#        # norm=norm,
+#        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+#        rasterized=True, shading='nearest')
+#    # make the top 0 degrees and the angles go clockwise
+#    ax.set_theta_direction(-1)
+#    ax.set_theta_offset(np.pi / 2.0)
+#    # try to set the radial lines
+#    rtick_locs = np.arange(0,25000,5000)
+#    rtick_labels = ['%.1f'%r for r in rtick_locs]
+#    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+#    # 
+#    fig.colorbar(psm, ax=ax)
+#    # Add a title
+#    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
+#
+#
+#    # Save it to a temporary buffer.
+#    buf = BytesIO()
+#    fig.savefig(buf, format="png")
+#    # Embed the result in the html output.
+#    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+#    fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
+#
+#    print('**** done with polar ***')
+#
+#    # Build the Plotly figure
+#    selected_yaxis = 'Number of Solar Plants'
+#    fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
+#
+#    my_cellStyle = {
+#        "styleConditions": [
+#            {
+#                "condition": f"params.colDef.field == '{selected_yaxis}'",
+#                "style": {"backgroundColor": "#d3d3d3"},
+#            },
+#            {   "condition": f"params.colDef.field != '{selected_yaxis}'",
+#                "style": {"color": "black"}
+#            },
+#        ]
+#    }
+#
+#    return fig_bar_matplotlib, fig_bar_plotly, {'cellStyle': my_cellStyle}
+#
+#
+## working here ...
+## syntax is Input('<widget-id>', 'value')
+## arguments to python function are in order of Input from top to bottom
+##@app.callback(
+##    Output(component_id='bar-graph-matplotlib',  component_property='src'),
+##    Output(component_id='bar-graph-matplotlib2', component_property='src'),
+##    Input('sweep_height', 'value'),
+##    Input('category', 'value'),
+##    Input('category2', 'value'),
+##    )
+##def update_graphs_new_sweep_selected(sweep_height_value, selected_field_name='SW',
+##    selected_field_name2='SW'):
+##
+##    print('inside yellow')
+##    sweep_node_name = "/sweep_".append(sweep_height_value)
+##    print('sweep_node_name = ', sweep_node_name)
+##    image_matplotlib_window1 = plot_data_polly(selected_field_name, max_range=100, beta=sweep_node_name, 
+##        field='ZDR', is_mdv=True) 
+##    image_matplotlib_window2 = plot_data_polly(selected_field_name2, max_range=100, beta=sweep_node_name, 
+##        field='ZDR', is_mdv=True) 
+##    return image_matplotlib_window1, image_matplotlib_window2  
+#
+## end of working here ...
+#
+#
+##@app.callback(
+##    Output(component_id='bar-graph-matplotlib2', component_property='src'),
+##    Output(component_id='bar-graph-matplotlib', component_property='src'),
+##    Input('sweep_height', 'value'),
+##)
+### immediately following function is associated with the callback
+##def change_sweep(selected_sweep):
+##    
+##    plot_data(selected_field, max_range=100, beta="sweep_".append(selected_sweep), field='ZDR', is_mdv=True)
+##    return fig_bar_matplotlib2
+#
+#
+## use for cartesian data
+## ds = dataset
+## beta is the sweep number 
+#def waves_image_mdv(max_range, beta, field, ds):
+#    # uses dataset sturcture  ...
+#    # Q: does xradar read cartesian files?
+#    # ValueError: cannot rename 'sweep_number' because it is not a variable or coordinate in this dataset
+#    # for cartesian data, it is about the z-level instead of the sweep
+#    height_index = 3
+#    if True:
+#        x0 = ds
+#        # sweep_dataarray = xr.DataArray(data_2d, coords=[sweep_azimuths, sweep_range], dims=["az", "range"])
+#        # R, Theta = np.meshgrid(sweep_range, sweep_azimuths)
+#        # ax.pcolormesh(Theta, R, data_2d, cmap='viridis')
+#        # Add a title
+#        # plt.title('Quadmesh on Polar Coordinates true data')
+## --- code for data tree possibly ---
+#        max_range_index = 100
+## the azimuth need to be sorted into ascending order
+#        X0, Y0 = np.meshgrid(ds.x0.data, ds.y0.data)
+#        fieldvar = ds.ZDR[0,height_index,:,:].data
+#        #                              (nrows, ncolumns)
+#        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+#        # z = fieldvar.data[:,:max_range_index]
+#        Z = np.nan_to_num(fieldvar, nan=-32)
+#    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',)
+#    #  Create a polar plot
+#    fig, ax = plt.subplots(subplot_kw=dict())
+#    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+#    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+#    # Plot the quadmesh
+#    #            (X(column), Y(row), Z(row,column))
+#    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+#    psm = ax.pcolormesh(X0, Y0, Z,
+#        cmap=cmap,
+#        vmin=edges_norm[0], vmax=edges_norm[-1],
+#        # norm=norm,
+#        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)),
+#        rasterized=True, shading='nearest')
+#    # try to set the radial lines
+#    # rtick_locs = np.arange(0,25000,5000)
+#    # rtick_labels = ['%.1f'%r for r in rtick_locs]
+#    # ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+#    #
+#    fig.colorbar(psm, ax=ax)
+#    # Add a title
+#    plt.title('Quadmesh on Cartesian Coordinates HV: ' + field)
+#    # Show the plot
+#    #plt.show()
+#    # fig
+#    return fig
+#
+##-----
+#
+#if __name__ == '__main__':
+#    app.run_server(debug=False, port=8002)
+#
