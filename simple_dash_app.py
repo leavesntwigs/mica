@@ -479,31 +479,37 @@ app.layout = html.Div([
 
         html.Div([
             dcc.Dropdown(
-                df['Indicator Name'].unique(),
-                'Fertility rate, total (births per woman)',
+                field_names_8,
+                field_names_8[0],
                 id='field-selector',
-                style={'width': '30%'},
+                multi=True,
+                style={'width': '50%'},
             ),
         ],
-        style={'width': '20%', 'display': 'inline-block'}),
+        style={'width': '100%', 'display': 'inline-block'}),
         html.Div([
             dcc.Dropdown(
-                df['Indicator Name'].unique(),
-                'Fertility rate, total (births per woman)',
+                ['unfold','delete','etc'],
+                'unfold',
                 id='actions-selector',
-                style={'width': '30%'},
+                style={'width': '50%'},
             ),
         ],
-        style={'width': '20%', 'display': 'inline-block'}),
+        style={'width': '100%', 'display': 'inline-block'}),
         html.Div([
+            dcc.Textarea(
+               id='number-of-rays-display-text',
+               value='number of rays to display',
+               style={'width': '10%', 'display': 'inline-block'}
+            ),
             dcc.Dropdown(
-                df['Indicator Name'].unique(),
-                'Fertility rate, total (births per woman)',
+                ['1','2','3','4'],
+                '1',
                 id='number-of-rays-selector',
-                style={'width': '30%'},
+                style={'width': '20%', 'display': 'inline-block'},
             ),
         ],
-        style={'width': '20%', 'display': 'inline-block'}),
+        style={'width': '100%', 'display': 'inline-block'}),
 
         dash_table.DataTable(
             id='spreadsheet',
@@ -576,263 +582,82 @@ app.layout = html.Div([
     ), style={'width': '49%', 'padding': '0px 20px 20px 20px'})
 ])
 
-
-@callback(
-    Output('crossfilter-indicator-scatter', 'figure'),
-    Input('crossfilter-xaxis-column', 'value'),
-    Input('crossfilter-yaxis-column', 'value'),
-    Input('crossfilter-xaxis-type', 'value'),
-    Input('crossfilter-yaxis-type', 'value'),
-    Input('crossfilter-year--slider', 'value'))
-def update_graph(xaxis_column_name, yaxis_column_name,
-                 xaxis_type, yaxis_type,
-                 year_value):
-    dff = df[df['Year'] == year_value]
-
-    fig = px.scatter(x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
-            y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
-            hover_name=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name']
-            )
-
-    fig.update_traces(customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'])
-
-    fig.update_xaxes(title=xaxis_column_name, type='linear' if xaxis_type == 'Linear' else 'log')
-
-    fig.update_yaxes(title=yaxis_column_name, type='linear' if yaxis_type == 'Linear' else 'log')
-
-    fig.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
-
-    return fig
-
-
-def create_time_series(dff, axis_type, title):
-
-    fig = px.scatter(dff, x='Year', y='Value')
-
-    fig.update_traces(mode='lines+markers')
-
-    fig.update_xaxes(showgrid=False)
-
-    fig.update_yaxes(type='linear' if axis_type == 'Linear' else 'log')
-
-    fig.add_annotation(x=0, y=0.85, xanchor='left', yanchor='bottom',
-                       xref='paper', yref='paper', showarrow=False, align='left',
-                       text=title)
-
-    fig.update_layout(height=225, margin={'l': 20, 'b': 30, 'r': 10, 't': 10})
-
-    return fig
-
-
-@callback(
-    Output('x-time-series', 'figure'),
-    Input('crossfilter-indicator-scatter', 'hoverData'),
-    Input('crossfilter-xaxis-column', 'value'),
-    Input('crossfilter-xaxis-type', 'value'))
-def update_x_timeseries(hoverData, xaxis_column_name, axis_type):
-    country_name = hoverData['points'][0]['customdata']
-    dff = df[df['Country Name'] == country_name]
-    dff = dff[dff['Indicator Name'] == xaxis_column_name]
-    title = '<b>{}</b><br>{}'.format(country_name, xaxis_column_name)
-    return create_time_series(dff, axis_type, title)
-
-
-@callback(
-    Output('y-time-series', 'figure'),
-    Input('crossfilter-indicator-scatter', 'hoverData'),
-    Input('crossfilter-yaxis-column', 'value'),
-    Input('crossfilter-yaxis-type', 'value'))
-def update_y_timeseries(hoverData, yaxis_column_name, axis_type):
-    dff = df[df['Country Name'] == hoverData['points'][0]['customdata']]
-    dff = dff[dff['Indicator Name'] == yaxis_column_name]
-    return create_time_series(dff, axis_type, yaxis_column_name)
+@app.callback(
+    Output(component_id='polar-1-1', component_property='src'),
+    Input('field-selection-1-1', 'value'),
+)
+def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+    print("inside green")
+    # uses global datatree ...
+    sweep = datatree['/sweep_8']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    # Generate data in polar coordinates
+    test_data = False # True
+    if test_data:
+        theta = np.linspace(0, 2 * np.pi, 360)
+        r = np.linspace(0, 1, 100)
+        R, Theta = np.meshgrid(r, theta)
+        Z = np.sin(R) * np.cos(Theta)
+    else:
+        max_range_index = 100
+# the azimuth need to be sorted into ascending order
+        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
+        # r = np.linspace(0,1, max_range_index) 
+        r = rvals[:max_range_index]
+        R, Theta = np.meshgrid(r, theta)
+        fieldvar = sweep[selected_field] # sweep[field]
+        #                              (nrows, ncolumns)
+        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        z = fieldvar.data[:,:max_range_index]
+        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
+        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
+        for i in range(0,360):
+            raw_az = azvals[i]
+            new_z_index = int(raw_az/scale_factor)
+            if (new_z_index >= 360):
+                new_z_index -= 360
+            z_bin_sort[new_z_index] = z[i]
+        Z = np.nan_to_num(z_bin_sort, nan=-32)
+        # Z = np.sin(R) * np.cos(Theta)
+    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
+    #  Create a polar plot
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    # Plot the quadmesh
+    #            (X(column), Y(row), Z(row,column))
+    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
+    psm = ax.pcolormesh(Theta, R, Z, 
+        cmap=cmap,
+        vmin=edges_norm[0], vmax=edges_norm[-1],
+        # norm=norm,
+        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
+        rasterized=True, shading='nearest')
+    # make the top 0 degrees and the angles go clockwise
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi / 2.0)
+    # try to set the radial lines
+    rtick_locs = np.arange(0,25000,5000)
+    rtick_labels = ['%.1f'%r for r in rtick_locs]
+    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+    # 
+    fig.colorbar(psm, ax=ax)
+    # Add a title
+    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    # Save it to a temporary buffer.
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    # Embed the result in the html output.
+    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    fig_bar_matplotlib2 = f'data:image/png;base64,{fig_data}'
 
+    print('**** done with polar 2 ***')
 
+    return fig_bar_matplotlib2
 
-#app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-#app.layout = html.Div([
-#    html.H1("Interactive Matplotlib with Dash", className='mb-2', style={'textAlign':'center'}),
-#
-#    dbc.Row([
-#        dbc.Col([
-#            dcc.Dropdown(
-#                id='sweep_height',
-#                value='0',
-#                clearable=False,
-#                options=sweep_names) 
-#        ], width=4),
-#    ]),
-#
-#    dbc.Row([
-#        dbc.Col([
-#            dcc.Dropdown(
-#                id='category',
-#                value='ZDR',
-#                clearable=False,
-#                options=field_names_8) 
-#        ], width=4),
-#        dbc.Col([
-#            html.Img(id='bar-graph-matplotlib')
-#        ], width=12)
-#    ]),
-#
-#    dbc.Row([
-#        dbc.Col([
-#            dcc.Dropdown(
-#                id='category2',
-#                value='VEL',
-#                clearable=False,
-#                options=field_names_8)
-#        ], width=4),
-#        dbc.Col([
-#            html.Img(id='bar-graph-matplotlib2')
-#        ], width=12)
-#    ]),
-#    
-#    dbc.Row([
-#        dbc.Col([
-#            dcc.Graph(id='bar-graph-plotly', figure={})
-#        ], width=12, md=6),
-#        dbc.Col([
-#            dag.AgGrid(
-#                id='grid',
-#                rowData=df.to_dict("records"),
-#                columnDefs=[{"field": i} for i in df.columns],
-#                columnSize="sizeToFit",
-#            )
-#        ], width=12, md=6),
-#    ], className='mt-4'),
-#
-#])
-#
-## Create interactivity between dropdown component and graph
-#
-#
-##@app.callback(
-##    Output(component_id='bar-graph-matplotlib2', component_property='src'),
-##    Output(component_id='bar-graph-matplotlib', component_property='src'),
-##    Input('sweep_height', 'value'),
-##)
-#
-#@app.callback(
-#    Output(component_id='bar-graph-matplotlib2', component_property='src'),
-#    Input('category2', 'value'),
-#)
-#
-##def plot_data_orig(selected_yaxis):
-##
-##    # Build the matplotlib figure
-##    fig = plt.figure(figsize=(14, 5))
-##    plt.bar(df['State'], df[selected_yaxis])
-##    plt.ylabel(selected_yaxis)
-##    plt.xticks(rotation=30)
-##
-##    # Save it to a temporary buffer.
-##    buf = BytesIO()
-##    fig.savefig(buf, format="png")
-##    # Embed the result in the html output.
-##    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
-##    fig_bar_matplotlib = f'data:image/png;base64,{fig_data}'
-##
-##    # Build the Plotly figure
-##    fig_bar_plotly = px.bar(df, x='State', y=selected_yaxis).update_xaxes(tickangle=330)
-##
-##    my_cellStyle = {
-##        "styleConditions": [
-##            {
-##                "condition": f"params.colDef.field == '{selected_yaxis}'",
-##                "style": {"backgroundColor": "#d3d3d3"},
-##            },
-##            {   "condition": f"params.colDef.field != '{selected_yaxis}'",
-##                "style": {"color": "black"}
-##            },
-##        ]
-##    }
-##
-##    return fig_bar_matplotlib, fig_bar_plotly, {'cellStyle': my_cellStyle}
-#
-#
-## -------- end of matplotlib-dash --------
-#
-## HERE datatree must not be sent!!! 
-##
-#
-#def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-#    print("inside green")
-#    # uses global datatree ...
-#    sweep = datatree['/sweep_8']
-#    rvals = sweep.range
-#    azvals = sweep.azimuth
-#    # Generate data in polar coordinates
-#    test_data = False # True
-#    if test_data:
-#        theta = np.linspace(0, 2 * np.pi, 360)
-#        r = np.linspace(0, 1, 100)
-#        R, Theta = np.meshgrid(r, theta)
-#        Z = np.sin(R) * np.cos(Theta)
-#    else:
-#        max_range_index = 100
-## the azimuth need to be sorted into ascending order
-#        theta = np.linspace(0, 2 * np.pi, 360) # azvals  
-#        # r = np.linspace(0,1, max_range_index) 
-#        r = rvals[:max_range_index]
-#        R, Theta = np.meshgrid(r, theta)
-#        fieldvar = sweep[selected_field] # sweep[field]
-#        #                              (nrows, ncolumns)
-#        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
-#        z = fieldvar.data[:,:max_range_index]
-#        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
-#        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
-#        for i in range(0,360):
-#            raw_az = azvals[i]
-#            new_z_index = int(raw_az/scale_factor)
-#            if (new_z_index >= 360):
-#                new_z_index -= 360
-#            z_bin_sort[new_z_index] = z[i]
-#        Z = np.nan_to_num(z_bin_sort, nan=-32)
-#        # Z = np.sin(R) * np.cos(Theta)
-#    # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',) 
-#    #  Create a polar plot
-#    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-#    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
-#    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
-#    # Plot the quadmesh
-#    #            (X(column), Y(row), Z(row,column))
-#    #psm = ax.pcolormesh(Theta, R, Z, cmap='seismic', rasterized=True, shading='nearest')
-#    psm = ax.pcolormesh(Theta, R, Z, 
-#        cmap=cmap,
-#        vmin=edges_norm[0], vmax=edges_norm[-1],
-#        # norm=norm,
-#        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)), 
-#        rasterized=True, shading='nearest')
-#    # make the top 0 degrees and the angles go clockwise
-#    ax.set_theta_direction(-1)
-#    ax.set_theta_offset(np.pi / 2.0)
-#    # try to set the radial lines
-#    rtick_locs = np.arange(0,25000,5000)
-#    rtick_labels = ['%.1f'%r for r in rtick_locs]
-#    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
-#    # 
-#    fig.colorbar(psm, ax=ax)
-#    # Add a title
-#    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
-#
-#
-#    # Save it to a temporary buffer.
-#    buf = BytesIO()
-#    fig.savefig(buf, format="png")
-#    # Embed the result in the html output.
-#    fig_data = base64.b64encode(buf.getbuffer()).decode("ascii")
-#    fig_bar_matplotlib2 = f'data:image/png;base64,{fig_data}'
-#
-#    print('**** done with polar 2 ***')
-#
-#    return fig_bar_matplotlib2
-#
 #
 ## Create interactivity between dropdown component and graph
 #@app.callback(
@@ -936,6 +761,7 @@ if __name__ == '__main__':
 ## working here ...
 ## syntax is Input('<widget-id>', 'value')
 ## arguments to python function are in order of Input from top to bottom
+# use this when changing sweep height, will update all images
 ##@app.callback(
 ##    Output(component_id='bar-graph-matplotlib',  component_property='src'),
 ##    Output(component_id='bar-graph-matplotlib2', component_property='src'),
@@ -1027,3 +853,7 @@ if __name__ == '__main__':
 #if __name__ == '__main__':
 #    app.run_server(debug=False, port=8002)
 #
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
