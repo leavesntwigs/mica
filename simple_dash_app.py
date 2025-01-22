@@ -373,6 +373,11 @@ app.layout = html.Div([
 
     html.Div([
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-1-1',
+            ),
             html.Img(
                id='polar-1-1',
                src='https://loremflickr.com/1280/720',
@@ -381,6 +386,11 @@ app.layout = html.Div([
         ],
         style={'width': '30%', 'display': 'inline-block'}),
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-1-2',
+            ),
             html.Img(
                id='polar-1-2',
                src='https://loremflickr.com/1280/720',
@@ -389,6 +399,11 @@ app.layout = html.Div([
         ],
         style={'width': '30%', 'display': 'inline-block'}),
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-1-3',
+            ),
             html.Img(
                id='polar-1-3',
                src='https://loremflickr.com/1280/720',
@@ -401,6 +416,11 @@ app.layout = html.Div([
     }),
     html.Div([
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-2-1',
+            ),
             html.Img(
                id='polar-2-1',
                src='https://loremflickr.com/1280/720',
@@ -409,6 +429,11 @@ app.layout = html.Div([
         ],
         style={'width': '30%', 'display': 'inline-block'}),
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-2-2',
+            ),
             html.Img(
                id='polar-2-2',
                src='https://loremflickr.com/1280/720',
@@ -417,6 +442,11 @@ app.layout = html.Div([
         ],
         style={'width': '30%', 'display': 'inline-block'}),
         html.Div([
+            dcc.Dropdown(
+                field_names_8,
+                'VEL',
+                id='field-selection-2-3',
+            ),
             html.Img(
                id='polar-2-3',
                src='https://loremflickr.com/1280/720',
