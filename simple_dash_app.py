@@ -1,5 +1,6 @@
 from dash import Dash, dash_table, html, dcc, Input, Output, callback
 import plotly.express as px
+import plotly.graph_objects as go
 # import dash_ag_grid as dag                       
 # import dash_bootstrap_components as dbc          
 import pandas as pd                              
@@ -90,6 +91,26 @@ try:
     (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
 except ValueError as err:
     print("something went wrong first: ", err)
+
+
+#                colorscale=[(0.00, "red"),   (0.33, "red"),
+#                    (0.33, "green"), (0.66, "green"),
+#                    (0.66, "blue"),  (1.00, "blue")],
+# color_scale_hex:  ['#483d8b', '#000080', '#0000ff', '#0000cd', '#87ceeb', '#006400', '#228b22', '#9acd32', '#bebebe', '#f5deb3', '#ffd700', '#ffff00', '#ff7f50', '#ffa500', '#c71585', '#ff4500', '#ff0000']
+# edges:  [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 20.0]
+def convert_to_go_colorscale(edges, colors_hex):
+    colorscale=[]
+    max = edges[-1]
+    min = edges[0]
+    edge_range = np.abs(max-min)
+    for i in range(len(edges)-1):
+       low = (edges[i]-min)/edge_range
+       high = (edges[i+1]-min)/edge_range
+       c = colors_hex[i]
+       colorscale.append((low, c))
+       colorscale.append((high, c))
+    return colorscale 
+    
 
 # use for cartesian data
 def right_dim(var):
@@ -237,6 +258,13 @@ def styles(background):
 
 print('result of get_field_names: ', get_field_names(datatree)) 
 
+def onclick(event):
+    print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+          (event.button, event.x, event.y, event.xdata, event.ydata))
+
+# cid = fig.canvas.mpl_connect('button_press_event', onclick)
+
+
 def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green")
     # uses global datatree ...
@@ -308,6 +336,112 @@ def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', 
     print('**** done with polar 2 ***')
 
     return fig_bar_matplotlib2
+
+
+def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+    print("inside plot_data_scatter")
+    # uses global datatree ...
+    sweep = datatree['/sweep_8']
+    rvals = sweep.range
+    azvals = sweep.azimuth
+    # Generate data in polar coordinates
+    test_data = False # True
+    if test_data:
+        theta = np.linspace(0, 2 * np.pi, 360)
+        r = np.linspace(0, 1, 100)
+        R, Theta = np.meshgrid(r, theta)
+        Z = np.sin(R) * np.cos(Theta)
+    else:
+        max_range_index = 4  
+# the azimuth need to be sorted into ascending order
+        theta = np.linspace(0, 360, 360) # azvals
+        # r = np.linspace(0,1, max_range_index)
+        r = rvals[:max_range_index]
+        R, Theta = np.meshgrid(r, theta)
+        fieldvar = sweep[selected_field] # sweep[field]
+        #                              (nrows, ncolumns)
+        #z = np.reshape(fieldvar.data, (len(azvals), len(rvals)))
+        z = fieldvar.data[:,:max_range_index]
+        print("r: ", r.data)
+        print("azvals: ", azvals.data)
+        print("z: ", z)
+        print("fieldvar.data dims: ", fieldvar)
+        print("Theta flattened: ", Theta.flatten())
+        scale_factor = 360/len(azvals) # or min_distance_between_rays * 360???
+        z_bin_sort = np.full((360,max_range_index), fill_value=-3200)
+        for i in range(0,360):
+            raw_az = azvals[i]
+            new_z_index = int(raw_az/scale_factor)
+            if (new_z_index >= 360):
+                new_z_index -= 360
+            z_bin_sort[new_z_index] = z[i]
+        Z = np.nan_to_num(z_bin_sort, nan=-32)
+
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    print("color_scale_hex: ", color_scale_hex)
+    print("edges: ", edges)
+    print("colors_norm: ", colors_norm)
+    print("edges_norm: ", edges_norm)
+    colorscale_for_go = convert_to_go_colorscale(edges, color_scale_hex)
+    print("colorscale_for_go: ", colorscale_for_go)
+    
+    #  Create a polar plot
+
+    fig = go.Figure(data=
+        go.Scatterpolar(
+            r = R.flatten(), # [0.5,1,2,2.5,3,4],
+            theta = Theta.flatten(), # [35,70,120,155,205,240],
+            mode = 'markers',
+            marker=dict(
+                size=5,
+                # set color to a numerical array 
+                # color='blue',
+                #color=Z_colors,
+                #color=['rgb(93, 164, 214)', 'rgb(255, 144, 14)',
+                #   'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
+                # color=['red', 'green', 'blue', 'orange'],
+                color=Z.flatten(),
+                # range_color=[-4, 20],
+                colorscale=colorscale_for_go,
+#                   [(0.00, "red"),   (0.33, "red"),
+#                    (0.33, "green"), (0.66, "green"),
+#                    (0.66, "blue"),  (1.00, "blue")],
+                # colorscale= [[0, 'blue'], [0.5, 'green'], [1.0, 'red']],
+                cmin = -4, cmax = 20, # this OR cauto; still produces gradient colorscale
+                # cauto = True,           # this OR cmin & cmax; still produces gradient colorscale
+                # colorscale='viridis',
+                # autocolorscale
+                # cmax, cmid, cmin
+                symbol='square-x',
+                showscale=True,
+                ## color should be based on a colorscale
+            )
+        ))
+
+    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+#    psm = ax.pcolormesh(Theta, R, Z,
+#        cmap=cmap,
+#        vmin=edges_norm[0], vmax=edges_norm[-1],
+#        # norm=norm,
+#        # norm=colors.BoundaryNorm(edges, ncolors=len(edges)),
+#        rasterized=True, shading='nearest')
+#    # make the top 0 degrees and the angles go clockwise
+#    ax.set_theta_direction(-1)
+#    ax.set_theta_offset(np.pi / 2.0)
+#    # try to set the radial lines
+#    rtick_locs = np.arange(0,25000,5000)
+#    rtick_labels = ['%.1f'%r for r in rtick_locs]
+#    ax.set_rgrids(rtick_locs, rtick_labels, fontsize=16, color="white")
+#    #
+#    fig.colorbar(psm, ax=ax)
+#    # Add a title
+#    plt.title('Quadmesh on Polar Coordinates (matplotlib): ' + selected_field)
+
+    print('**** done with plot_data_scatter  ***')
+
+    return fig
 
 
 params2 = [
@@ -447,9 +581,14 @@ app.layout = html.Div([
                 'VEL',
                 id='field-selection-2-3',
             ),
-            html.Img(
+            dcc.Graph(
                id='polar-2-3',
-               src='https://loremflickr.com/1280/720',
+               figure=go.Figure(data=
+                  go.Scatterpolar(
+                      r = [0.5,1,2,2.5,3,4],
+                      theta = [35,70,120,155,205,240],
+                      mode = 'markers',
+                  )),
                style={'width': '100%'}
             )
         ],
@@ -526,60 +665,6 @@ app.layout = html.Div([
     ], style={
         'padding': '10px 5px'
     }),
-
-    html.Div([
-
-        html.Div([
-            dcc.Dropdown(
-                df['Indicator Name'].unique(),
-                'Fertility rate, total (births per woman)',
-                id='crossfilter-xaxis-column',
-            ),
-            dcc.RadioItems(
-                ['Linear', 'Log'],
-                'Linear',
-                id='crossfilter-xaxis-type',
-                labelStyle={'display': 'inline-block', 'marginTop': '5px'}
-            )
-        ],
-        style={'width': '49%', 'display': 'inline-block'}),
-
-        html.Div([
-            dcc.Dropdown(
-                df['Indicator Name'].unique(),
-                'Life expectancy at birth, total (years)',
-                id='crossfilter-yaxis-column'
-            ),
-            dcc.RadioItems(
-                ['Linear', 'Log'],
-                'Linear',
-                id='crossfilter-yaxis-type',
-                labelStyle={'display': 'inline-block', 'marginTop': '5px'}
-            )
-        ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
-    ], style={
-        'padding': '10px 5px'
-    }),
-
-    html.Div([
-        dcc.Graph(
-            id='crossfilter-indicator-scatter',
-            hoverData={'points': [{'customdata': 'Japan'}]}
-        )
-    ], style={'width': '49%', 'display': 'inline-block', 'padding': '0 20'}),
-    html.Div([
-        dcc.Graph(id='x-time-series'),
-        dcc.Graph(id='y-time-series'),
-    ], style={'display': 'inline-block', 'width': '49%'}),
-
-    html.Div(dcc.Slider(
-        df['Year'].min(),
-        df['Year'].max(),
-        step=None,
-        id='crossfilter-year--slider',
-        value=df['Year'].max(),
-        marks={str(year): str(year) for year in df['Year'].unique()}
-    ), style={'width': '49%', 'padding': '0px 20px 20px 20px'})
 ])
 
 @app.callback(
@@ -633,14 +718,21 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     return fig_bar_matplotlib2
 
 @app.callback(
-    Output(component_id='polar-2-3', component_property='src'),
+    Output(component_id='polar-2-3', component_property='figure'),
     Input('field-selection-2-3', 'value'),
 )
 def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
+    print("inside green-blue")
+    scatter_plot = plot_data_scatter(selected_field, max_range, beta, field, is_mdv)
+# go.Figure(data=
+        # go.Scatterpolar(
+            # r = [0.5,1,2,2.5,3,4],
+            # theta = [35,70,120,155,205,240],
+            # mode = 'markers',
+        # ))
+# plot_data_polly(selected_field, max_range, beta, field, is_mdv)
     print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
+    return scatter_plot
 
 #
 ## Create interactivity between dropdown component and graph
