@@ -352,7 +352,7 @@ def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR'
         R, Theta = np.meshgrid(r, theta)
         Z = np.sin(R) * np.cos(Theta)
     else:
-        max_range_index = 4  
+        max_range_index = 100  
 # the azimuth need to be sorted into ascending order
         theta = np.linspace(0, 360, 360) # azvals
         # r = np.linspace(0,1, max_range_index)
@@ -392,6 +392,8 @@ def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR'
         go.Scatterpolar(
             r = R.flatten(), # [0.5,1,2,2.5,3,4],
             theta = Theta.flatten(), # [35,70,120,155,205,240],
+            # startangle=0,
+            # direction="counterclockwise",
             mode = 'markers',
             marker=dict(
                 size=5,
@@ -419,6 +421,14 @@ def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR'
             )
         ))
 
+    fig.update_layout(
+       polar = dict(
+          angularaxis = dict(
+             rotation=90,
+             direction="clockwise"
+          )
+       )
+    )    
     (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
     cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
 #    psm = ax.pcolormesh(Theta, R, Z,
