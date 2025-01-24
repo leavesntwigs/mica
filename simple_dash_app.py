@@ -429,6 +429,8 @@ def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR'
           )
        )
     )    
+    fig.update_layout(clickmode='event+select')
+
     (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
     cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
 #    psm = ax.pcolormesh(Theta, R, Z,
@@ -599,7 +601,7 @@ app.layout = html.Div([
                       theta = [35,70,120,155,205,240],
                       mode = 'markers',
                   )),
-               style={'width': '100%'}
+               style={'height': '150%'}
             )
         ],
         style={'width': '30%', 'display': 'inline-block'}),
@@ -663,8 +665,8 @@ app.layout = html.Div([
         dash_table.DataTable(
             id='spreadsheet',
             columns=(
-                [{'id': 'spreadsheet2', 'name': 'Range'}] +
-                [{'id': p, 'name': p} for p in params]
+                [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
+                [{'id': 'spreadsheet-field-1', 'name': 'VEL'}]
             ),
             data=[
                 dict(Model=i, **{param: 0 for param in params})
@@ -734,15 +736,53 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green-blue")
     scatter_plot = plot_data_scatter(selected_field, max_range, beta, field, is_mdv)
-# go.Figure(data=
-        # go.Scatterpolar(
-            # r = [0.5,1,2,2.5,3,4],
-            # theta = [35,70,120,155,205,240],
-            # mode = 'markers',
-        # ))
-# plot_data_polly(selected_field, max_range, beta, field, is_mdv)
     print('**** done with polar 2 ***')
     return scatter_plot
+
+# callbacks for click centering spreadsheet data
+@callback(
+    Output('spreadsheet', 'columns'),
+    Input('polar-2-3', 'clickData'),
+    Input('field-selection-2-3', 'value'),
+)
+def display_click_data(clickData, selected_field):
+    print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
+# country_name = hoverData['points'][0]['customdata']
+    params=[selected_field]
+    print("params: ", params)
+
+# changes must be in this format ...
+#            columns=(
+#                [{'id': 'spreadsheet2', 'name': 'Range'}] +
+#                [{'id': p, 'name': p} for p in params]
+#            ),
+
+    return (
+       [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
+       [{'id': 'spreadsheet-field-1-column', 'name': selected_field}]
+    )
+
+@callback(
+    Output('spreadsheet', 'data'),
+    Input('polar-2-3', 'clickData'),
+    Input('field-selection-2-3', 'value'),
+)
+def display_click_data_rows(clickData, selected_field):
+    print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
+# country_name = hoverData['points'][0]['customdata']
+    params=[selected_field]
+    print("params: ", params)
+
+# changes must be in this format ... 
+#            data=[
+#                dict(Model=i, **{param: 0 for param in params})
+#                for i in range(1, 5)
+#            ],  
+
+    return [{ 'spreadsheet-range-column': i,
+       'spreadsheet-field-1-column': i * 5,
+       } for i in range(5)
+    ]
 
 #
 ## Create interactivity between dropdown component and graph
