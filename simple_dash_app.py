@@ -264,14 +264,20 @@ def onclick(event):
 
 # cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
+def find_nearest_index(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
 def get_field_data_blah(field_name='ZDR', theta=50.0):
     print("first line of get_field_data")
     float(theta)
     sweep = datatree['/sweep_8']
     print("field_name: ", field_name, theta)
     fieldvar = sweep[field_name]
-    az_index = 0 # TODO lookup the azimuth index for theta 
-    z = fieldvar.data[3,:10] # fieldvar.data[az_index,:]
+    azvals = sweep.azimuth
+    az_index = find_nearest_index(azvals, theta)   
+    z = fieldvar.data[az_index,:10] # fieldvar.data[az_index,:]
     print("get_field_data: ", z[:5])
     return z
 
