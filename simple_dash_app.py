@@ -264,6 +264,16 @@ def onclick(event):
 
 # cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
+def get_field_data_blah(field_name='ZDR', theta=50.0):
+    print("first line of get_field_data")
+    float(theta)
+    sweep = datatree['/sweep_8']
+    print("field_name: ", field_name, theta)
+    fieldvar = sweep[field_name]
+    az_index = 0 # TODO lookup the azimuth index for theta 
+    z = fieldvar.data[3,:10] # fieldvar.data[az_index,:]
+    print("get_field_data: ", z[:5])
+    return z
 
 def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green")
@@ -742,14 +752,17 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 # callbacks for click centering spreadsheet data
 @callback(
     Output('spreadsheet', 'columns'),
+    Output('spreadsheet', 'data'),
     Input('polar-2-3', 'clickData'),
     Input('field-selection-2-3', 'value'),
 )
 def display_click_data(clickData, selected_field):
     print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
+    theta = clickData['points'][0]['theta']
 # country_name = hoverData['points'][0]['customdata']
     params=[selected_field]
     print("params: ", params)
+    print("selected_field: ", selected_field)
 
 # changes must be in this format ...
 #            columns=(
@@ -757,32 +770,57 @@ def display_click_data(clickData, selected_field):
 #                [{'id': p, 'name': p} for p in params]
 #            ),
 
-    return (
+    columns = (
        [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
        [{'id': 'spreadsheet-field-1-column', 'name': selected_field}]
     )
-
-@callback(
-    Output('spreadsheet', 'data'),
-    Input('polar-2-3', 'clickData'),
-    Input('field-selection-2-3', 'value'),
-)
-def display_click_data_rows(clickData, selected_field):
-    print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
-# country_name = hoverData['points'][0]['customdata']
-    params=[selected_field]
-    print("params: ", params)
 
 # changes must be in this format ... 
 #            data=[
 #                dict(Model=i, **{param: 0 for param in params})
 #                for i in range(1, 5)
 #            ],  
-
-    return [{ 'spreadsheet-range-column': i,
-       'spreadsheet-field-1-column': i * 5,
+    range_start = 10
+    range_stop = 100
+    range_step = 10
+    print("before get_field_data")
+    field_data = get_field_data_blah(selected_field, theta)
+    print("after get_field_data")
+#    print("field_data: ", field_data[:5])
+    data = [{ 'spreadsheet-range-column': (i*range_step)+range_start,
+       'spreadsheet-field-1-column': field_data[i],
        } for i in range(5)
     ]
+
+    return columns, data
+
+#@callback(
+#    Output('spreadsheet', 'data'),
+#    Input('polar-2-3', 'clickData'),
+#    Input('field-selection-2-3', 'value'),
+#)
+#def display_click_data_rows(clickData, selected_field):
+#    print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
+# country_name = hoverData['points'][0]['customdata']
+#    params=[selected_field]
+#    print("params: ", params)
+
+# changes must be in this format ... 
+#            data=[
+#                dict(Model=i, **{param: 0 for param in params})
+#                for i in range(1, 5)
+#            ],  
+#    range_start = 10
+#    range_stop = 100
+#    range_step = 10
+#    print("before get_field_data")
+#    field_data = get_field_data(selected_field, theta)
+#    print("after get_field_data")
+#    # print("field_data: ", field_data[:5])
+#    return [{ 'spreadsheet-range-column': (i*range_step)+range_start,
+#       'spreadsheet-field-1-column': i*3,
+#       } for i in range(5)
+#    ]
 
 #
 ## Create interactivity between dropdown component and graph
