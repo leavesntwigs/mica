@@ -1,4 +1,5 @@
 from dash import Dash, dash_table, html, dcc, Input, Output, callback
+import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
 # import dash_ag_grid as dag                       
@@ -265,6 +266,7 @@ def onclick(event):
 # cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
 def find_nearest_index(array, value):
+    # float(value)
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
@@ -277,9 +279,13 @@ def get_field_data_blah(field_name='ZDR', theta=50.0):
     fieldvar = sweep[field_name]
     azvals = sweep.azimuth
     az_index = find_nearest_index(azvals, theta)   
-    z = fieldvar.data[az_index,:10] # fieldvar.data[az_index,:]
+    z = fieldvar.data[az_index,:] # fieldvar.data[az_index,:]
     print("get_field_data: ", z[:5])
     return z
+
+def get_ranges():
+    sweep = datatree['/sweep_8']
+    return sweep.range.data
 
 def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green")
@@ -695,6 +701,17 @@ app.layout = html.Div([
     }),
 ])
 
+#<!-- 
+#        dag.AgGrid(
+#            id="grid-scroll-to",
+#            columnDefs=columnDefs,
+#            rowData=df.to_dict("records"),
+#            columnSize="sizeToFit",
+#            defaultColDef={"minWidth": 150},
+#            dashGridOptions={"animateRows": False}
+#        ),
+#-->
+
 @app.callback(
     Output(component_id='polar-1-1', component_property='src'),
     Input('field-selection-1-1', 'value'),
@@ -765,10 +782,13 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 def display_click_data(clickData, selected_field):
     print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
     theta = clickData['points'][0]['theta']
+    range = clickData['points'][0]['r']
 # country_name = hoverData['points'][0]['customdata']
     params=[selected_field]
     print("params: ", params)
     print("selected_field: ", selected_field)
+
+    field_az = selected_field + " " + str(np.round(theta, decimals=2))
 
 # changes must be in this format ...
 #            columns=(
@@ -778,7 +798,7 @@ def display_click_data(clickData, selected_field):
 
     columns = (
        [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
-       [{'id': 'spreadsheet-field-1-column', 'name': selected_field}]
+       [{'id': 'spreadsheet-field-1-column', 'name': field_az}]
     )
 
 # changes must be in this format ... 
@@ -786,19 +806,48 @@ def display_click_data(clickData, selected_field):
 #                dict(Model=i, **{param: 0 for param in params})
 #                for i in range(1, 5)
 #            ],  
-    range_start = 10
+    ranges = get_ranges()
+    # array[start:stop:step]
+    corresponding_range_index = find_nearest_index(ranges, range)
+    print("corresponding_range_index: ", corresponding_range_index)
+    range_range = np.arange(corresponding_range_index-5, corresponding_range_index+5)
+    print("range_range: ", range_range)
+    print("ranges: ", ranges[:5])
+    range_start = ranges[0] 
     range_stop = 100
-    range_step = 10
+    range_step = ranges[1] - ranges[0] 
     print("before get_field_data")
     field_data = get_field_data_blah(selected_field, theta)
     print("after get_field_data")
 #    print("field_data: ", field_data[:5])
-    data = [{ 'spreadsheet-range-column': (i*range_step)+range_start,
+    data = [{ 'spreadsheet-range-column': ranges[i],    # (i*range_step)+range_start,
        'spreadsheet-field-1-column': field_data[i],
-       } for i in range(5)
-    ]
+       } for i in range_range # np.arange(corresponding_range_index-5, corresponding_range_index+5)
 
+#   corresponding_range_index-5, ... corresponding_range_index+5
+
+    ]
     return columns, data
+
+#
+#@callback(
+#    Output("grid-scroll-to", "scrollTo"),
+#    Input("row-index-scroll-to", "value"),
+#    Input("column-scroll-to", "value"),
+#    Input("row-position-scroll-to", "value"),
+#    Input("column-position-scroll-to", "value"),
+#    State("grid-scroll-to", "scrollTo"),
+#)
+#def scroll_to_row_and_col(row_index, column, row_position, column_position, scroll_to):
+#    if not scroll_to:
+#        scroll_to = {}
+#    scroll_to["rowIndex"] = row_index
+#    scroll_to["column"] = column
+#    scroll_to["rowPosition"] = row_position
+#    scroll_to["columnPosition"] = column_position
+#    return scroll_to
+#
+
 
 #@callback(
 #    Output('spreadsheet', 'data'),
