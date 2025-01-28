@@ -1,4 +1,4 @@
-from dash import Dash, dash_table, html, dcc, Input, Output, callback
+from dash import Dash, dash_table, html, dcc, Input, Output, State, callback
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
@@ -16,6 +16,8 @@ import xarray as xr
 import xradar as xd
 #import cmweather
 import numpy as np
+
+import subprocess
 
 # df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
 
@@ -513,7 +515,11 @@ app.layout = html.Div([
                id='scripts',
                value='scripts',
                style={'width': '30%'}
-            )
+            ),
+            dcc.Input(id='input-on-submit', type='text'),
+            html.Button('Run', id='run-script'),
+            html.Div(id='container-button-basic',
+               children='Enter a value and press submit'),
         ],
         style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
@@ -829,6 +835,28 @@ def display_click_data(clickData, selected_field):
     ]
     return columns, data
 
+
+
+
+@callback(
+    Output('container-button-basic', 'children'),
+    Input('run-script', 'n_clicks'),
+    State('input-on-submit', 'value'),
+    prevent_initial_call=True
+)
+def update_output(n_clicks, value):
+    # Run the command and capture the output
+    #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+    # needs absolute path to lrose, or lrose must be in the environment variable PATH
+    result = subprocess.run(["/Users/brenda/lrose/bin/RadxPrint", "-h"], capture_output=True, text=True)
+
+    # Print the output
+    print(result.stdout)
+
+    return 'The input value was "{}" and the button has been clicked {} times'.format(
+        value,
+        n_clicks
+    )
 #
 #@callback(
 #    Output("grid-scroll-to", "scrollTo"),
