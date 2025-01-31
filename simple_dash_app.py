@@ -503,11 +503,13 @@ app.layout = html.Div([
         ],
         style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
-            dcc.Textarea(
+            dcc.Input(
                id='file-url-selector',
+               type='text',
                value='select file/url',
                style={'width': '30%'}
-            )
+            ),
+            html.Button('Open', id='open-file-folder'),
         ],
         style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
@@ -535,11 +537,7 @@ app.layout = html.Div([
     }),
    
     html.Div([
-        html.Div([
-            dcc.Slider(-5, 10, 1, value=-3,
-               id='time-line-selector',
-            )
-        ]),
+        html.Div(id='time-line'),
     ], style={
         'padding': '10px 5px'
     }),
@@ -835,8 +833,32 @@ def display_click_data(clickData, selected_field):
     ]
     return columns, data
 
-
-
+@callback( 
+    Output(component_id='time-line', component_property='children'),  
+    Input('open-file-folder', 'n_clicks'),
+    State('file-url-selector', 'value'),
+    prevent_initial_call=True
+)              
+def open_file(n_clicks, value):
+    # Run the command and capture the output
+    #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+    # needs absolute path to lrose, or lrose must be in the environment variable PATH
+#    try:    
+#       result = subprocess.run(["~/lrose/bin/RadxPrint", "-h"], capture_output=True, check=True,
+#          text=True)
+#       if result.returncode != 0:
+#          print("result: ", result.returncode)
+#       # Print the output
+#       print(result.stdout)
+#    except CalledProcessError as e:
+#       print("Errors: ", e)
+           
+#    return f'Output: {value}' 
+     return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
+#    return 'The input value was "{}" and the button has been clicked {} times'.format(
+#        value,
+#        n_clicks
+#    )
 
 @callback(
     Output('container-button-basic', 'children'),
@@ -848,15 +870,30 @@ def update_output(n_clicks, value):
     # Run the command and capture the output
     #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
     # needs absolute path to lrose, or lrose must be in the environment variable PATH
-    result = subprocess.run(["/Users/brenda/lrose/bin/RadxPrint", "-h"], capture_output=True, text=True)
-
-    # Print the output
-    print(result.stdout)
+    try:
+       result = subprocess.run(["~/lrose/bin/RadxPrint", "-h"], capture_output=True, check=True,
+          text=True)
+       if result.returncode != 0:
+          print("result: ", result.returncode)
+       # Print the output
+       print(result.stdout)
+    except CalledProcessError as e:
+       print("Errors: ", e)
 
     return 'The input value was "{}" and the button has been clicked {} times'.format(
         value,
         n_clicks
     )
+
+
+# this depends on new url, directory, file selected
+#@callback(
+#    Output(),
+#    Input('time-line-selector', 'value'),
+#)
+#def time_line_selection_changed():
+
+
 #
 #@callback(
 #    Output("grid-scroll-to", "scrollTo"),
