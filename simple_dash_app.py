@@ -18,6 +18,7 @@ import xradar as xd
 import numpy as np
 
 import subprocess
+import os
 
 # df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
 
@@ -506,7 +507,7 @@ app.layout = html.Div([
             dcc.Input(
                id='file-url-selector',
                type='text',
-               value='select file/url',
+               value='/Users/brenda/data/PRECIP',
                style={'width': '30%'}
             ),
             html.Button('Open', id='open-file-folder'),
@@ -839,7 +840,24 @@ def display_click_data(clickData, selected_field):
     State('file-url-selector', 'value'),
     prevent_initial_call=True
 )              
-def open_file(n_clicks, value):
+def open_file(n_clicks, path):   # really, this is setup the time slider; not open_file
+    marks = {}
+    if os.path.isdir(path):
+       # open folder and get list of files
+       print("path is a folder")
+       i = 0
+       with os.scandir(path) as it:
+           for entry in it:
+               if not entry.name.startswith('.') and entry.is_file() and entry.name.endswith('.nc'):
+                   print(entry.name)
+                   marks[i] = entry.name 
+                   i += 1
+    elif os.path.isfile(path):
+       # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
+       datatree = xd.io.open_cfradial1_datatree(path)
+       field_names_8 = get_field_names(datatree)
+    else:
+       print("not a file or folder")   
     # Run the command and capture the output
     #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
     # needs absolute path to lrose, or lrose must be in the environment variable PATH
@@ -854,7 +872,16 @@ def open_file(n_clicks, value):
 #       print("Errors: ", e)
            
 #    return f'Output: {value}' 
-     return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
+#   0, 10, step=None, marks={ 0: '0°F', 3: '3°F', 5: '5°F', 7.65: '7.65°F', 10: '10°F' }, value=5
+    return dcc.Slider(0, len(marks), step=None, 
+       #marks=None,
+       value=0, id='time-line-selector',
+       marks=marks,
+       tooltip={
+          "always_visible": False,
+          "placement": "top"},
+     )
+#    return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
 #    return 'The input value was "{}" and the button has been clicked {} times'.format(
 #        value,
 #        n_clicks
