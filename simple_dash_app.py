@@ -513,6 +513,7 @@ app.layout = html.Div([
                style={'width': '30%'}
             ),
             html.Button('Open', id='open-file-folder'),
+            html.Div(id='file-selection'), 
         ],
         style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
@@ -836,14 +837,16 @@ def display_click_data(clickData, selected_field):
     ]
     return columns, data
 
+
 @callback( 
     Output(component_id='time-line', component_property='children'),  
+    Output('file-selection', 'children'),
     Input('open-file-folder', 'n_clicks'),
     State('file-url-selector', 'value'),
     prevent_initial_call=True
 )              
 def open_file(n_clicks, path):   # really, this is setup the time slider; not open_file
-    marks = {}
+    file_list = [] # {}
     if os.path.isdir(path):
        # open folder and get list of files
        print("path is a folder")
@@ -852,7 +855,8 @@ def open_file(n_clicks, path):   # really, this is setup the time slider; not op
            for entry in it:
                if not entry.name.startswith('.') and entry.is_file() and entry.name.endswith('.nc'):
                    print(entry.name)
-                   marks[i] = entry.name 
+                   # marks dictionary index for slider must be an integer!
+                   file_list.append(entry.name) 
                    i += 1
     elif os.path.isfile(path):
        # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
@@ -860,6 +864,9 @@ def open_file(n_clicks, path):   # really, this is setup the time slider; not op
        field_names_8 = get_field_names(datatree)
     else:
        print("not a file or folder")   
+
+    file_list.sort()
+
     # Run the command and capture the output
     #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
     # needs absolute path to lrose, or lrose must be in the environment variable PATH
@@ -875,14 +882,20 @@ def open_file(n_clicks, path):   # really, this is setup the time slider; not op
            
 #    return f'Output: {value}' 
 #   0, 10, step=None, marks={ 0: '0°F', 3: '3°F', 5: '5°F', 7.65: '7.65°F', 10: '10°F' }, value=5
-    return dcc.Slider(0, len(marks), step=None, 
-       #marks=None,
+    return [dcc.Slider(0, len(file_list), step=1, 
+       marks={i: ''  for i in range(len(file_list))},
        value=0, id='time-line-selector',
-       marks=marks,
+       #marks=marks,
        tooltip={
           "always_visible": False,
           "placement": "top"},
-     )
+       ),
+       dcc.Dropdown(
+          file_list,
+          'file',
+          id='file-selection',
+       )]
+
 #    return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
 #    return 'The input value was "{}" and the button has been clicked {} times'.format(
 #        value,
