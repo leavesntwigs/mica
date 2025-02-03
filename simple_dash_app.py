@@ -22,9 +22,11 @@ import os
 
 # df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# external_stylesheets = ['cBLwgT.css']
 
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+#app = Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, )
 
 df = pd.read_csv('https://plotly.github.io/datasets/country_indicators.csv')
 
@@ -495,14 +497,14 @@ params = [
 
 
 app.layout = html.Div([
+
+    html.Div(
+        className="app-header",
+        children=[
+            html.Div('HawkEdit Dashboard', className="app-header--title")
+        ]
+    ),
     html.Div([
-        html.Div([
-            dcc.Textarea(
-               value='HawkEdit Dashboard',
-               style={'width': '30%'}
-            )
-        ],
-        style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
             dcc.Input(
                id='file-url-selector',
