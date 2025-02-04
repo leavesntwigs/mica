@@ -1,4 +1,4 @@
-from dash import Dash, dash_table, html, dcc, Input, Output, State, callback
+from dash import Dash, dash_table, html, dcc, Input, Output, State, ALL, Patch,  callback
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
@@ -37,6 +37,9 @@ is_mdv = False
 
 
 # TODO: make a separate module/package for this ...
+# then, make it available like this ...
+# from colormapf import color_conversion_base, etc.
+# 
 import matplotlib.colors as colors
 from matplotlib.colors import to_rgb
 
@@ -218,6 +221,7 @@ def open_file(path):
        # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
        datatree = xd.io.open_cfradial1_datatree(path)
        field_names_8 = get_field_names(datatree)
+       return field_names_8, datatree
 
 def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
@@ -664,6 +668,12 @@ app.layout = html.Div([
     }),
 
     html.Div([
+        html.Button("Add Plot", id="add-plot-btn", n_clicks=0),
+        html.Div(id="dropdown-container-div", children=[]),
+        html.Div(id="dropdown-container-output-div"),
+    ]),
+
+    html.Div([
 
         html.Div([
             dcc.Dropdown(
@@ -860,6 +870,7 @@ def display_click_data(clickData, selected_field):
 # then open file
 @callback(
     Output('time-line-selector', 'value'),
+    Output('field-selection-2-3', 'options'),
     Input('file-selection', 'value'),
     State('file-selection', 'options'),
     State('file-url-selector', 'value'),
@@ -868,11 +879,11 @@ def display_click_data(clickData, selected_field):
 def file_selected_from_dropdown(filename, file_options, path):
     print("path: ", path, " filename: ", filename)
     fullpath = os.path.join(path, filename)
-    open_file(fullpath)
+    field_names, datatree = open_file(fullpath)
 #         options=[{"label": x, "value": x} for x in folders],
 #         value=folders[0],    
     index = file_options.index(filename)
-    return index
+    return index, field_names
 
 
 # TODO: open file, update field selection dropdown, update images
@@ -901,6 +912,7 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
     elif os.path.isfile(path):
        # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
        datatree = xd.io.open_cfradial1_datatree(path)
+       # somehow, update all the image plots using a plotly pattern matching technique.
        field_names_8 = get_field_names(datatree)
     else:
        print("not a file or folder")   
@@ -965,6 +977,30 @@ def update_output(n_clicks, value):
     return 'The input value was "{}" and the button has been clicked {} times'.format(
         value,
         n_clicks
+    )
+
+# working with patches and ALL ...
+
+@callback(
+    Output("dropdown-container-div", "children"), Input("add-plot-btn", "n_clicks")
+)
+def display_dropdowns(n_clicks):
+    patched_children = Patch()
+    new_dropdown = dcc.Dropdown(
+        options=["NYC", "MTL", "LA", "TOKYO"],
+        id={"type": "city-filter-dropdown", "index": n_clicks},
+    )
+    patched_children.append(new_dropdown)
+    return patched_children
+
+
+@callback(
+    Output("dropdown-container-output-div", "children"),
+    Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
+)
+def display_output(values):
+    return html.Div(
+        [html.Div(f"Dropdown {i + 1} = {value}") for (i, value) in enumerate(values)]
     )
 
 
