@@ -22,6 +22,7 @@ import os
 
 # df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/solar.csv")
 
+# style sheets are automatically loaded if they are in the assets subdir
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # external_stylesheets = ['cBLwgT.css']
 
@@ -211,6 +212,12 @@ sweep_names = ['1','2','3']
 # field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
 # open_file_widget = pn.widgets.Button(name="open/read file?", button_type='primary')
 
+
+def open_file(path):
+    if os.path.isfile(path):
+       # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
+       datatree = xd.io.open_cfradial1_datatree(path)
+       field_names_8 = get_field_names(datatree)
 
 def show_selected_field(field, x):
     return f'selected field is {field} sweep is {x}'
@@ -837,6 +844,39 @@ def display_click_data(clickData, selected_field):
     ]
     return columns, data
 
+# Working here ...
+# TODO: if time line selected, then update the file-selection to select that file
+# then open file and update images and height selections.
+#@callback( 
+#    Output(component_id='time-line', component_property='children'),  
+#    Output('file-selection', 'children'),
+#    Input('time-line-selector', 'value'),
+#    State('file-url-selector', 'value'),
+#    prevent_initial_call=True
+#) 
+#def file_selected(file_index, path):
+
+# TODO: if file selected from dropdown, update time line,
+# then open file
+@callback(
+    Output('time-line-selector', 'value'),
+    Input('file-selection', 'value'),
+    State('file-selection', 'options'),
+    State('file-url-selector', 'value'),
+    prevent_initial_call=True
+)
+def file_selected_from_dropdown(filename, file_options, path):
+    print("path: ", path, " filename: ", filename)
+    fullpath = os.path.join(path, filename)
+    open_file(fullpath)
+#         options=[{"label": x, "value": x} for x in folders],
+#         value=folders[0],    
+    index = file_options.index(filename)
+    return index
+
+
+# TODO: open file, update field selection dropdown, update images
+
 
 @callback( 
     Output(component_id='time-line', component_property='children'),  
@@ -845,7 +885,7 @@ def display_click_data(clickData, selected_field):
     State('file-url-selector', 'value'),
     prevent_initial_call=True
 )              
-def open_file(n_clicks, path):   # really, this is setup the time slider; not open_file
+def open_file_folder(n_clicks, path):   # really, this is setup the time slider; not open_file
     file_list = [] # {}
     if os.path.isdir(path):
        # open folder and get list of files
@@ -892,7 +932,7 @@ def open_file(n_clicks, path):   # really, this is setup the time slider; not op
        ),
        dcc.Dropdown(
           file_list,
-          'file',
+          file_list[0],
           id='file-selection',
        )]
 
