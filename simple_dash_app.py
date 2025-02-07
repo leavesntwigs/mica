@@ -1,4 +1,4 @@
-from dash import Dash, dash_table, html, dcc, Input, Output, State, ALL, Patch,  callback
+from dash import Dash, dash_table, html, dcc, Input, Output, State, ALL, MATCH, Patch,  callback
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
@@ -215,7 +215,7 @@ sweep_names = ['1','2','3']
 # field_names_widget = pn.widgets.Select(name="field", options=get_field_names(datatree))
 # open_file_widget = pn.widgets.Button(name="open/read file?", button_type='primary')
 
-
+# maybe save the file path, rather than the datatree?
 def open_file(path):
     if os.path.isfile(path):
        # /Users/brenda/data/PRECIP/SEA20220702_005700_ppi.nc
@@ -375,8 +375,10 @@ def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', 
 
     return fig_bar_matplotlib2
 
-
-def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+# working on datatree store ...
+def plot_data_scatter(selected_field, 
+    # datatree2=datatree, 
+    max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside plot_data_scatter")
     # uses global datatree ...
     sweep = datatree['/sweep_8']
@@ -390,6 +392,7 @@ def plot_data_scatter(selected_field, max_range=100, beta="sweep_x", field='ZDR'
         R, Theta = np.meshgrid(r, theta)
         Z = np.sin(R) * np.cos(Theta)
     else:
+        print("all good")
         max_range_index = 100  
 # the azimuth need to be sorted into ascending order
         theta = np.linspace(0, 360, 360) # azvals
@@ -509,6 +512,9 @@ params = [
 
 app.layout = html.Div([
 
+    # The memory store reverts to the default on every page refresh
+    dcc.Store(id={'type': 'storage', 'index': 'memory'}),
+
     html.Div(
         className="app-header",
         children=[
@@ -524,7 +530,13 @@ app.layout = html.Div([
                style={'width': '30%'}
             ),
             html.Button('Open', id='open-file-folder'),
-            html.Div(id='file-selection'), 
+            html.Div(
+               dcc.Dropdown(
+                  options=['select data file'],
+                  value='select data file',
+                  id='file-selection',
+               ),
+            ), 
         ],
         style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
@@ -552,7 +564,14 @@ app.layout = html.Div([
     }),
    
     html.Div([
-        html.Div(id='time-line'),
+        dcc.Slider(min=0, max=1, step=1, 
+           # marks={i: ''  for i in range(1)},
+           value=0, id='time-line-selector',
+           # marks=marks,
+           tooltip={
+              "always_visible": False,
+              "placement": "top"},
+           )
     ], style={
         'padding': '10px 5px'
     }),
@@ -790,10 +809,15 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 @app.callback(
     Output(component_id='polar-2-3', component_property='figure'),
     Input('field-selection-2-3', 'value'),
+    # State({'type': 'storage', 'index': 'memory'}, 'data'),
+    prevent_initial_call=True,
 )
 def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green-blue")
-    scatter_plot = plot_data_scatter(selected_field, max_range, beta, field, is_mdv)
+    # data = data or {'tree': 0}
+    scatter_plot = plot_data_scatter(selected_field, 
+       # data.get('tree'), 
+       max_range, beta, field, is_mdv)
     print('**** done with polar 2 ***')
     return scatter_plot
 
@@ -870,28 +894,42 @@ def display_click_data(clickData, selected_field):
 # then open file
 @callback(
     Output('time-line-selector', 'value'),
-    Output('field-selection-2-3', 'options'),
+    # pattern match on all plots
+    Output({"type": "city-filter-dropdown", "index": ALL}, "children"),
+    # Output('field-selection-2-3', 'options'),
+    # Output({'type': 'storage', 'index': 'memory'}, 'data'),
     Input('file-selection', 'value'),
     State('file-selection', 'options'),
     State('file-url-selector', 'value'),
+    # State({'type': 'storage', 'index': 'memory'}, 'data'),
     prevent_initial_call=True
 )
-def file_selected_from_dropdown(filename, file_options, path):
+def file_selected_from_dropdown(filename, file_options, path,
+    #  data
+    ):
     print("path: ", path, " filename: ", filename)
     fullpath = os.path.join(path, filename)
     field_names, datatree = open_file(fullpath)
 #         options=[{"label": x, "value": x} for x in folders],
 #         value=folders[0],    
     index = file_options.index(filename)
-    return index, field_names
+    # data['tree'] = datatree
+    print("after datatree assigned")
+    original_children = Patch()
+    patched_children = [field_names for (i, x) in enumerate(original_children)]
+    # list comprehension to update field names
+
+    return index, patched_children, # data
 
 
 # TODO: open file, update field selection dropdown, update images
 
 
 @callback( 
-    Output(component_id='time-line', component_property='children'),  
-    Output('file-selection', 'children'),
+    Output(component_id='time-line-selector', component_property='max'),  
+    # Output(component_id='time-line-selector', component_property='marks'),  
+    Output('file-selection', 'options'),
+    Output('file-selection', 'value'),
     Input('open-file-folder', 'n_clicks'),
     State('file-url-selector', 'value'),
     prevent_initial_call=True
@@ -934,19 +972,11 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
            
 #    return f'Output: {value}' 
 #   0, 10, step=None, marks={ 0: '0°F', 3: '3°F', 5: '5°F', 7.65: '7.65°F', 10: '10°F' }, value=5
-    return [dcc.Slider(0, len(file_list), step=1, 
-       marks={i: ''  for i in range(len(file_list))},
-       value=0, id='time-line-selector',
-       #marks=marks,
-       tooltip={
-          "always_visible": False,
-          "placement": "top"},
-       ),
-       dcc.Dropdown(
-          file_list,
-          file_list[0],
-          id='file-selection',
-       )]
+    marks={i: ''  for i in range(len(file_list))},
+    return [len(file_list),  
+       file_list,
+       file_list[0],
+    ]
 
 #    return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
 #    return 'The input value was "{}" and the button has been clicked {} times'.format(
@@ -980,17 +1010,31 @@ def update_output(n_clicks, value):
     )
 
 # working with patches and ALL ...
-
+# two cases:
+#   1. open file, fields are the same
+#   2. open file, fields are different; cannot path dynamic widgets; replace entire widget.
+#
 @callback(
     Output("dropdown-container-div", "children"), Input("add-plot-btn", "n_clicks")
 )
 def display_dropdowns(n_clicks):
     patched_children = Patch()
     new_dropdown = dcc.Dropdown(
-        options=["NYC", "MTL", "LA", "TOKYO"],
+        options=field_names_8, # ["NYC", "MTL", "LA", "TOKYO"],
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
+    new_graph = dcc.Graph(
+        id={"type": "polar-image", "index": n_clicks},
+        figure=go.Figure(data=
+           go.Scatterpolar(
+              r = [0.5,1,2,2.5,3,4],
+              theta = [35,70,120,155,205,240],
+              mode = 'markers',
+           )),  
+        style={'height': '150%'}
+    )  
     patched_children.append(new_dropdown)
+    patched_children.append(new_graph)
     return patched_children
 
 
@@ -1003,6 +1047,19 @@ def display_output(values):
         [html.Div(f"Dropdown {i + 1} = {value}") for (i, value) in enumerate(values)]
     )
 
+@callback(
+    Output({"type": "polar-image", "index": MATCH}, "figure"),
+    Input({"type": "city-filter-dropdown", "index": MATCH}, "value"),
+    prevent_initial_call=True,
+)
+def display_image(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+    print("inside green-orange")
+    # data = data or {'tree': 0}
+    scatter_plot = plot_data_scatter(selected_field,
+       # data.get('tree'),
+       max_range, beta, field, is_mdv)
+    print('**** done with polar 3 ***')
+    return scatter_plot
 
 # this depends on new url, directory, file selected
 #@callback(
