@@ -668,7 +668,7 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 def display_click_data(clickDataList, selected_field):
     print(">>>> selected_field: ", selected_field)
     print("clickDataList: ", clickDataList)
-    if selected_field[0] == None or clickDataList[0] == None:
+    if selected_field.count(None) == len(selected_field) or clickDataList.count(None) == len(clickDataList):
         return [], []
     plot_clicked = ctx.triggered_id  # will be like this ... {'index': 0, 'type': 'polar-image'}
     plot_clicked_index = plot_clicked['index']
