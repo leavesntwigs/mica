@@ -1,4 +1,4 @@
-from dash import Dash, dash_table, html, dcc, Input, Output, State, ALL, MATCH, Patch,  callback
+from dash import Dash, dash_table, html, dcc, Input, Output, ctx, State, ALL, MATCH, Patch,  callback
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
@@ -292,7 +292,7 @@ def get_field_data_blah(field_name='ZDR', theta=50.0):
     float(theta)
     sweep = datatree['/sweep_8']
     print("field_name: ", field_name, theta)
-    fieldvar = sweep[field_name]
+    fieldvar = sweep[field_name]    # use datatree subsets! 
     azvals = sweep.azimuth
     az_index = find_nearest_index(azvals, theta)   
     z = fieldvar.data[az_index,:] # fieldvar.data[az_index,:]
@@ -576,116 +576,6 @@ app.layout = html.Div([
         'padding': '10px 5px'
     }),
 
-
-    html.Div([
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-1-1',
-            ),
-            html.Img(
-               id='polar-1-1',
-               src='https://loremflickr.com/1280/720',
-               style={'width': '100%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-1-2',
-            ),
-            html.Img(
-               id='polar-1-2',
-               src='https://loremflickr.com/1280/720',
-               style={'width': '100%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-1-3',
-            ),
-            html.Img(
-               id='polar-1-3',
-               src='https://loremflickr.com/1280/720',
-               style={'width': '100%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-    ], style={
-        'padding': '10px 5px'
-    }),
-    html.Div([
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-2-1',
-            ),
-            html.Img(
-               id='polar-2-1',
-               src='https://loremflickr.com/1280/720',
-               style={'width': '100%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-2-2',
-            ),
-            html.Img(
-               id='polar-2-2',
-               src='https://loremflickr.com/1280/720',
-               style={'width': '100%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Dropdown(
-                field_names_8,
-                'VEL',
-                id='field-selection-2-3',
-            ),
-            dcc.Graph(
-               id='polar-2-3',
-               figure=go.Figure(data=
-                  go.Scatterpolar(
-                      r = [0.5,1,2,2.5,3,4],
-                      theta = [35,70,120,155,205,240],
-                      mode = 'markers',
-                  )),
-               style={'height': '150%'}
-            )
-        ],
-        style={'width': '30%', 'display': 'inline-block'}),
-    ], style={
-        'padding': '10px 5px'
-    }),
-
-    html.Div([
-        dash_table.DataTable(
-            id='system-info',
-            columns=(
-                [{'id': 'system-info2', 'name': 'System Info'}] +
-                [{'id': p, 'name': p} for p in params2]
-            ),
-            data=[
-                dict(Model=i, **{param: 0 for param in params2})
-                for i in range(1, 5)
-            ],
-            editable=False
-        ),        
-    ], style={
-        'padding': '10px 5px'
-    }),
-
     html.Div([
         html.Button("Add Plot", id="add-plot-btn", n_clicks=0),
         html.Div(id="dropdown-container-div", children=[]),
@@ -756,62 +646,6 @@ app.layout = html.Div([
 #        ),
 #-->
 
-@app.callback(
-    Output(component_id='polar-1-1', component_property='src'),
-    Input('field-selection-1-1', 'value'),
-)
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
-
-@app.callback(
-    Output(component_id='polar-1-2', component_property='src'),
-    Input('field-selection-1-2', 'value'),
-)
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
-
-@app.callback(
-    Output(component_id='polar-1-3', component_property='src'),
-    Input('field-selection-1-3', 'value'),
-)
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
-
-@app.callback(
-    Output(component_id='polar-2-1', component_property='src'),
-    Input('field-selection-2-1', 'value'),
-)
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
-
-@app.callback(
-    Output(component_id='polar-2-2', component_property='src'),
-    Input('field-selection-2-2', 'value'),
-)
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green")
-    fig_bar_matplotlib2 = plot_data_polly(selected_field, max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return fig_bar_matplotlib2
-
-@app.callback(
-    Output(component_id='polar-2-3', component_property='figure'),
-    Input('field-selection-2-3', 'value'),
-    # State({'type': 'storage', 'index': 'memory'}, 'data'),
-    prevent_initial_call=True,
-)
 def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green-blue")
     # data = data or {'tree': 0}
@@ -825,19 +659,30 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
 @callback(
     Output('spreadsheet', 'columns'),
     Output('spreadsheet', 'data'),
-    Input('polar-2-3', 'clickData'),
-    Input('field-selection-2-3', 'value'),
+    # Input('polar-2-3', 'clickData'), 
+    # Input('field-selection-2-3', 'value'),
+    Input({"type": "polar-image", "index": ALL}, "clickData"),
+    Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    prevent_initial_call=True,
 )
-def display_click_data(clickData, selected_field):
-    print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
-    theta = clickData['points'][0]['theta']
-    range = clickData['points'][0]['r']
+def display_click_data(clickDataList, selected_field):
+    print(">>>> selected_field: ", selected_field)
+    print("clickDataList: ", clickDataList)
+    if selected_field[0] == None or clickDataList[0] == None:
+        return [], []
+    plot_clicked = ctx.triggered_id  # will be like this ... {'index': 0, 'type': 'polar-image'}
+    plot_clicked_index = plot_clicked['index']
+    point_clicked_data = clickDataList[plot_clicked_index]
+    print("point_clicked_data: ", point_clicked_data)
+    # clickData = clickDataList[0]
+    # print("clickData r,theta: ", clickData['points'][0]['r'], ",", clickData['points'][0]['theta'])
+    theta = point_clicked_data['points'][0]['theta']
+    range = point_clicked_data['points'][0]['r']
 # country_name = hoverData['points'][0]['customdata']
-    params=[selected_field]
-    print("params: ", params)
-    print("selected_field: ", selected_field)
+    selected_field_name = selected_field[plot_clicked_index]
+    print("selected_field: ", selected_field_name)
 
-    field_az = selected_field + " " + str(np.round(theta, decimals=2))
+    field_az = selected_field_name + " " + str(np.round(theta, decimals=2))
 
 # changes must be in this format ...
 #            columns=(
@@ -866,7 +711,7 @@ def display_click_data(clickData, selected_field):
     range_stop = 100
     range_step = ranges[1] - ranges[0] 
     print("before get_field_data")
-    field_data = get_field_data_blah(selected_field, theta)
+    field_data = get_field_data_blah(selected_field_name, theta)
     print("after get_field_data")
 #    print("field_data: ", field_data[:5])
     data = [{ 'spreadsheet-range-column': ranges[i],    # (i*range_step)+range_start,
@@ -1033,8 +878,15 @@ def display_dropdowns(n_clicks):
            )),  
         style={'height': '150%'}
     )  
-    patched_children.append(new_dropdown)
-    patched_children.append(new_graph)
+
+    # it must be html.Div(["a", "b", "c"]) not html.Div("a", "b", "c")
+
+    patched_children.append(
+       html.Div(
+          [html.Div([new_dropdown, new_graph], style={'width': '50%', 'display': 'inline-block'}),])
+    )
+    # patched_children.append(new_dropdown)
+    # patched_children.append(new_graph)
     return patched_children
 
 
