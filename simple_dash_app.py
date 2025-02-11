@@ -526,7 +526,7 @@ app.layout = html.Div([
             dcc.Input(
                id='file-url-selector',
                type='text',
-               value='/Users/brenda/data/PRECIP',
+               value='/Users/brenda/data/for_mica/nexrad/output/20240510',
                style={'width': '30%'}
             ),
             html.Button('Open', id='open-file-folder'),
@@ -740,7 +740,7 @@ def display_click_data(clickDataList, selected_field):
 @callback(
     Output('time-line-selector', 'value'),
     # pattern match on all plots
-    Output({"type": "city-filter-dropdown", "index": ALL}, "children"),
+    #Output({"type": "city-filter-dropdown", "index": ALL}, "children"),
     # Output('field-selection-2-3', 'options'),
     # Output({'type': 'storage', 'index': 'memory'}, 'data'),
     Input('file-selection', 'value'),
@@ -760,11 +760,12 @@ def file_selected_from_dropdown(filename, file_options, path,
     index = file_options.index(filename)
     # data['tree'] = datatree
     print("after datatree assigned")
-    original_children = Patch()
-    patched_children = [field_names for (i, x) in enumerate(original_children)]
+    #original_children = Patch()
+    #patched_children = [field_names for (i, x) in enumerate(original_children)]
     # list comprehension to update field names
 
-    return index, patched_children, # data
+    # return index, patched_children, # data
+    return index
 
 
 # TODO: open file, update field selection dropdown, update images
