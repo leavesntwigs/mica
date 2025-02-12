@@ -1,4 +1,4 @@
-from dash import Dash, dash_table, html, dcc, Input, Output, ctx, State, ALL, MATCH, Patch,  callback
+from dash import Dash, dash_table, html, dcc, Input, Output, ctx, State, ALL, MATCH, Patch,  callback, no_update
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go
@@ -583,6 +583,9 @@ app.layout = html.Div([
     ]),
 
     html.Div([
+       
+        # dcc.Store stores the intermediate value
+        dcc.Store(id='field-names-current'),
 
         html.Div([
             dcc.Dropdown(
@@ -744,6 +747,7 @@ def display_click_data(clickDataList, selected_field):
     Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
     # Output({"type": "polar-image", "index": ALL}, "children"),
     # Output({'type': 'storage', 'index': 'memory'}, 'data'),
+    Output('field-names-current', 'data'),
     Input('file-selection', 'value'),
     State('file-selection', 'options'),
     State('file-url-selector', 'value'),
@@ -766,15 +770,15 @@ def file_selected_from_dropdown(filename, file_options, path, values
     print("after datatree assigned")
     # original_children = Patch()
     # 
-    # TODO: 
     # this works, but if a new plot is added afterward, the field names revert to the default names
     # somehow need to update the field_names store along with the stored datatree.
+    # use dcc.Store
     # 
     options_for_all = [field_names for i in enumerate(values)]
     # list comprehension to update field names
 
     # return index, patched_children, # data
-    return index, options_for_all
+    return index, options_for_all, field_names
 
 
 # TODO: open file, update field selection dropdown, update images
@@ -870,13 +874,26 @@ def update_output(n_clicks, value):
 #   2. open file, fields are different; cannot patch dynamic widgets; replace entire widget.
 #
 @callback(
-    Output("dropdown-container-div", "children"), Input("add-plot-btn", "n_clicks")
+    Output("dropdown-container-div", "children"), 
+    Input("add-plot-btn", "n_clicks"),
+    Input('field-names-current', 'data'),  
 )
-def display_dropdowns(n_clicks):
+def display_dropdowns(n_clicks, field_names):
+    # prevent everytime field-names-current is changed, a new plot is added!
+    trigger_cause = ctx.triggered_id
+    if trigger_cause == 'field-names-current':
+       return no_update
     ncolumns = 3
+    print(">>> n_clicks: ", n_clicks)
+    # add new plot ONLY if n_clicks has changed; otherwise, this is just an update to the store
     patched_children = Patch()
+    use_these_field_names = field_names_8
+    if field_names:
+       use_these_field_names = field_names
+      
     new_dropdown = dcc.Dropdown(
-        options=field_names_8, # ["NYC", "MTL", "LA", "TOKYO"],
+        #options=field_names_8, # ["NYC", "MTL", "LA", "TOKYO"],
+        options=use_these_field_names,
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
     new_graph = dcc.Graph(
