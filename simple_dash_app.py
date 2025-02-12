@@ -911,8 +911,8 @@ def display_dropdowns(n_clicks, field_names):
     # innerlist = patched_children[-1]
     # print("innerlist: ", innerlist)
     patched_children.append(
-       html.Div(
-          [html.Div([new_dropdown, new_graph], style={'width': '50%', 'display': 'inline-block'}),])
+       html.Span(
+          [html.Div([new_dropdown, new_graph], style={'width': '33%', 'display': 'inline-block'}),])
     )
     # patched_children.append(new_dropdown)
     # patched_children.append(new_graph)
