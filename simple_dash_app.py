@@ -735,21 +735,23 @@ def display_click_data(clickDataList, selected_field):
 #) 
 #def file_selected(file_index, path):
 
-# TODO: if file selected from dropdown, update time line,
+# if file selected from dropdown, update time line,
 # then open file
 @callback(
     Output('time-line-selector', 'value'),
-    # pattern match on all plots
-    #Output({"type": "city-filter-dropdown", "index": ALL}, "children"),
-    # Output('field-selection-2-3', 'options'),
+    # pattern match on all plots; need to send nclicks number of list elements
+    # Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+    # Output({"type": "polar-image", "index": ALL}, "children"),
     # Output({'type': 'storage', 'index': 'memory'}, 'data'),
     Input('file-selection', 'value'),
     State('file-selection', 'options'),
     State('file-url-selector', 'value'),
     # State({'type': 'storage', 'index': 'memory'}, 'data'),
+    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
     prevent_initial_call=True
 )
-def file_selected_from_dropdown(filename, file_options, path,
+def file_selected_from_dropdown(filename, file_options, path, values
     #  data
     ):
     print("path: ", path, " filename: ", filename)
@@ -757,15 +759,22 @@ def file_selected_from_dropdown(filename, file_options, path,
     field_names, datatree = open_file(fullpath)
 #         options=[{"label": x, "value": x} for x in folders],
 #         value=folders[0],    
+
+    # field_names = [["NYC", "MTL", "LA", "TOKYO"], ["orange", "blue"]]
     index = file_options.index(filename)
     # data['tree'] = datatree
     print("after datatree assigned")
-    #original_children = Patch()
-    #patched_children = [field_names for (i, x) in enumerate(original_children)]
+    # original_children = Patch()
+    # 
+    # TODO: 
+    # this works, but if a new plot is added afterward, the field names revert to the default names
+    # somehow need to update the field_names store along with the stored datatree.
+    # 
+    options_for_all = [field_names for i in enumerate(values)]
     # list comprehension to update field names
 
     # return index, patched_children, # data
-    return index
+    return index, options_for_all
 
 
 # TODO: open file, update field selection dropdown, update images
@@ -858,12 +867,13 @@ def update_output(n_clicks, value):
 # working with patches and ALL ...
 # two cases:
 #   1. open file, fields are the same
-#   2. open file, fields are different; cannot path dynamic widgets; replace entire widget.
+#   2. open file, fields are different; cannot patch dynamic widgets; replace entire widget.
 #
 @callback(
     Output("dropdown-container-div", "children"), Input("add-plot-btn", "n_clicks")
 )
 def display_dropdowns(n_clicks):
+    ncolumns = 3
     patched_children = Patch()
     new_dropdown = dcc.Dropdown(
         options=field_names_8, # ["NYC", "MTL", "LA", "TOKYO"],
@@ -881,7 +891,8 @@ def display_dropdowns(n_clicks):
     )  
 
     # it must be html.Div(["a", "b", "c"]) not html.Div("a", "b", "c")
-
+    # innerlist = patched_children[-1]
+    # print("innerlist: ", innerlist)
     patched_children.append(
        html.Div(
           [html.Div([new_dropdown, new_graph], style={'width': '50%', 'display': 'inline-block'}),])
