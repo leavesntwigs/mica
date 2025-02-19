@@ -232,7 +232,17 @@ def show_selected_field(field, x):
 #        return f'Select a file to open'
 #    else:
 #        return f'You selected {file_name}'
-    
+   
+
+def fetch_ray_field_data(path, file_name, sweep_number):
+    fullpath = os.path.join(path, file_name)
+    field_names, datatree = open_file(fullpath)
+    key = sweep_number    # '/sweep_' + str(sweep_number)
+    print("key: ", key)
+    datatree_sweep = None
+    if key in datatree:
+        datatree_sweep = datatree[key]
+    return datatree_sweep
 
 # use with pn.pane.HoloViews
 def show_selected_file(file_name):
@@ -287,10 +297,10 @@ def find_nearest_index(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def get_field_data_blah(field_name='ZDR', theta=50.0):
+def get_field_data_blah(field_name='ZDR', theta=50.0, selected_sweep='\sweep_1'):
     print("first line of get_field_data")
     float(theta)
-    sweep = datatree['/sweep_8']
+    sweep = datatree[selected_sweep]
     print("field_name: ", field_name, theta)
     fieldvar = sweep[field_name]    # use datatree subsets! 
     azvals = sweep.azimuth
@@ -303,10 +313,10 @@ def get_ranges():
     sweep = datatree['/sweep_8']
     return sweep.range.data
 
-def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green")
     # uses global datatree ...
-    sweep = datatree['/sweep_8']
+    sweep = datatree40['/sweep_8']
     rvals = sweep.range
     azvals = sweep.azimuth
     # Generate data in polar coordinates
@@ -377,11 +387,11 @@ def plot_data_polly(selected_field, max_range=100, beta="sweep_x", field='ZDR', 
 
 # working on datatree store ...
 def plot_data_scatter(selected_field, 
-    # datatree2=datatree, 
+    datatree2=datatree, 
     max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside plot_data_scatter")
     # uses global datatree ...
-    sweep = datatree['/sweep_8']
+    sweep = datatree2['/sweep_8']
     rvals = sweep.range
     azvals = sweep.azimuth
     # Generate data in polar coordinates
@@ -512,6 +522,8 @@ params = [
 
 app.layout = html.Div([
 
+    dcc.Store(id={'type': 'storage', 'index': 'xyz'}),
+
     # The memory store reverts to the default on every page refresh
     dcc.Store(id={'type': 'storage', 'index': 'memory'}),
 
@@ -526,8 +538,8 @@ app.layout = html.Div([
             dcc.Input(
                id='file-url-selector',
                type='text',
-               value='/Users/brenda/data/for_mica/nexrad/output/20240510',
-               style={'width': '30%'}
+               value='~/data/for_mica/nexrad/output/20240510',
+               style={'width': '50%'}
             ),
             html.Button('Open', id='open-file-folder'),
             html.Div(
@@ -538,27 +550,20 @@ app.layout = html.Div([
                ),
             ), 
         ],
-        style={'width': '25%', 'display': 'inline-block'}),
+        style={'width': '30%', 'display': 'inline-block'}),
         html.Div([
             dcc.Textarea(
-               id='scripts',
-               value='scripts',
+               value='Sweep / Height',
                style={'width': '30%'}
             ),
-            dcc.Input(id='input-on-submit', type='text'),
-            html.Button('Run', id='run-script'),
-            html.Div(id='container-button-basic',
-               children='Enter a value and press submit'),
-        ],
-        style={'width': '25%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Textarea(
+            dcc.Dropdown(
                id='height-selector',
-               value='height',
-               style={'width': '30%'}
+               options=['1','2','3'],
+               value='1',
+               style={'width': '40%'}
             )
         ],
-        style={'width': '25%', 'display': 'inline-block'}),
+        style={'width': '60%', 'display': 'inline-block'}),
     ], style={
         'padding': '10px 5px'
     }),
@@ -606,6 +611,18 @@ app.layout = html.Div([
             ),
         ],
         style={'width': '100%', 'display': 'inline-block'}),
+        html.Div([
+            dcc.Textarea(
+               id='scripts',
+               value='scripts',
+               style={'width': '30%'}
+            ),   
+            dcc.Input(id='input-on-submit', type='text'),
+            html.Button('Run', id='run-script'),
+            html.Div(id='container-button-basic',
+               children='Enter a value and press submit'),
+        ],   
+        style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
             dcc.Textarea(
                id='number-of-rays-display-text',
@@ -666,9 +683,10 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     # Input('field-selection-2-3', 'value'),
     Input({"type": "polar-image", "index": ALL}, "clickData"),
     Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    State('height-selector', 'value'),
     prevent_initial_call=True,
 )
-def display_click_data(clickDataList, selected_field):
+def display_click_data(clickDataList, selected_field, selected_sweep):
     print(">>>> selected_field: ", selected_field)
     print("clickDataList: ", clickDataList)
     if selected_field.count(None) == len(selected_field) or clickDataList.count(None) == len(clickDataList):
@@ -714,7 +732,7 @@ def display_click_data(clickDataList, selected_field):
     range_stop = 100
     range_step = ranges[1] - ranges[0] 
     print("before get_field_data")
-    field_data = get_field_data_blah(selected_field_name, theta)
+    field_data = get_field_data_blah(selected_field_name, theta, selected_sweep)
     print("after get_field_data")
 #    print("field_data: ", field_data[:5])
     data = [{ 'spreadsheet-range-column': ranges[i],    # (i*range_step)+range_start,
@@ -726,7 +744,6 @@ def display_click_data(clickDataList, selected_field):
     ]
     return columns, data
 
-# Working here ...
 # TODO: if time line selected, then update the file-selection to select that file
 # then open file and update images and height selections.
 #@callback( 
@@ -748,6 +765,7 @@ def display_click_data(clickDataList, selected_field):
     # Output({"type": "polar-image", "index": ALL}, "children"),
     # Output({'type': 'storage', 'index': 'memory'}, 'data'),
     Output('field-names-current', 'data'),
+    Output('height-selector', 'options'),
     Input('file-selection', 'value'),
     State('file-selection', 'options'),
     State('file-url-selector', 'value'),
@@ -764,6 +782,9 @@ def file_selected_from_dropdown(filename, file_options, path, values
 #         options=[{"label": x, "value": x} for x in folders],
 #         value=folders[0],    
 
+    sweeps = datatree.match("/sweep_*")
+    sweep_options = [s for s in sweeps]
+    print("sweep_options: ", sweep_options)
     # field_names = [["NYC", "MTL", "LA", "TOKYO"], ["orange", "blue"]]
     index = file_options.index(filename)
     # data['tree'] = datatree
@@ -778,7 +799,7 @@ def file_selected_from_dropdown(filename, file_options, path, values
     # list comprehension to update field names
 
     # return index, patched_children, # data
-    return index, options_for_all, field_names
+    return index, options_for_all, field_names, sweep_options
 
 
 # TODO: open file, update field selection dropdown, update images
@@ -928,19 +949,57 @@ def display_output(values):
         [html.Div(f"Dropdown {i + 1} = {value}") for (i, value) in enumerate(values)]
     )
 
+# new field selected
+# @callback(
+ #    Output({"type": "polar-image", "index": MATCH}, "figure"),
+ #    Input({"type": "city-filter-dropdown", "index": MATCH}, "value"),
+ #    Input({'type': 'storage', 'index': 'xyz'}, 'data'),
+ #    prevent_initial_call=True,
+ #)
+ #def display_image(selected_field, datatree39, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+ #    print("inside green-orange")
+ #    # data = data or {'tree': 0}
+ #    if datatree39 == None:
+ #       return no_update
+ #    scatter_plot = plot_data_scatter(selected_field,
+ #       datatree39,
+ #       # data.get('tree'),
+ #       max_range, beta, field, is_mdv)
+ #    print('**** done with polar 3 ***')
+ #    return scatter_plot
+
+# reconcile these two callbacks.  They overlap in the polar-image MATCH!!!
+# maybe just trigger the field selection widgets?
+# Working here ... 
+# new sweep / height selected
+#    update spreadsheet (store in State centered  range / az )
+#    update all plots
 @callback(
     Output({"type": "polar-image", "index": MATCH}, "figure"),
-    Input({"type": "city-filter-dropdown", "index": MATCH}, "value"),
-    prevent_initial_call=True,
+    # Output({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
+    Input('height-selector', 'value'),  # this triggers the callback
+    Input({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
+    State('file-url-selector', 'value'),
+    State('file-selection', 'value'),
+    # State({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
+    prevent_initial_call=True
 )
-def display_image(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green-orange")
-    # data = data or {'tree': 0}
-    scatter_plot = plot_data_scatter(selected_field,
-       # data.get('tree'),
-       max_range, beta, field, is_mdv)
-    print('**** done with polar 3 ***')
+def update_all_plots(sweep_number, field, path, file_name):
+    if sweep_number == None:
+       return no_update
+    # TODO: check that field exists in sweep
+    print("fred/url: ", path)
+    print("fred/file_name: ", file_name)
+    datatree_sweep = fetch_ray_field_data(path, file_name, sweep_number)
+    if field == None:
+       field = "ZDR"
+    scatter_plot = plot_data_scatter(field,
+       datatree_sweep,
+       # max_range, beta, field, is_mdv
+       )
     return scatter_plot
+
+
 
 # this depends on new url, directory, file selected
 #@callback(
