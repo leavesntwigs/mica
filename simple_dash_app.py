@@ -146,22 +146,22 @@ def get_field_names(datatree):
 
 # NEXRAD
 # TODO: make a default datatree structure
-if is_cfradial:
-    dirname = "/Users/brenda/data/for_mica/nexrad/output/20240510"
-    filename = "cfrad.20240510_010615.273_to_20240510_011309.471_KBBX_SUR.nc"
-    localfilename = dirname + "/" + filename
-    datatree = xd.io.open_cfradial1_datatree(localfilename)
-    print('before blue')
-    field_names_8 = get_field_names(datatree)
-    print('field_names_8 = ', field_names_8)
-    print('after blue')
-elif is_mdv:
-    # cartesian data set
-    ds_cart = xr.open_dataset("/Users/brenda/data/for_mica/ncf_20161006_191339.nc")
-else:
-    path = "/Users/brenda/data/for_mica/nexrad/"
-    filename = "KBBX20240510_010615_V06"
-    datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
+#if is_cfradial:
+#    dirname = "/Users/brenda/data/for_mica/nexrad/output/20240510"
+#    filename = "cfrad.20240510_010615.273_to_20240510_011309.471_KBBX_SUR.nc"
+#    localfilename = dirname + "/" + filename
+#    datatree = xd.io.open_cfradial1_datatree(localfilename)
+#    print('before blue')
+#    field_names_8 = get_field_names(datatree)
+#    print('field_names_8 = ', field_names_8)
+#    print('after blue')
+#elif is_mdv:
+#    # cartesian data set
+#    ds_cart = xr.open_dataset("/Users/brenda/data/for_mica/ncf_20161006_191339.nc")
+#else:
+#    path = "/Users/brenda/data/for_mica/nexrad/"
+#    filename = "KBBX20240510_010615_V06"
+#    datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(path+filename)
 
 
 # TODO: set default datatree and default filename, so that widgets display null
@@ -182,14 +182,14 @@ def get_datatree(file_full_path):
 #    return moments_cart
 
 
-minimum_number_of_gates = 50
-def get_ranges(datatree):
-    sweep = datatree['/sweep_0'] # TODO: what if this sweep doesn't exist?
-    start_range = sweep.ray_start_range.data[0]
-    gate_spacing = sweep.ray_gate_spacing.data[0]
-    ngates = sweep.ray_n_gates.data[0]
-    return [start_range+gate_spacing*minimum_number_of_gates,
-        start_range+gate_spacing*int(ngates/2), start_range+gate_spacing*ngates] 
+#minimum_number_of_gates = 50
+#def get_ranges(datatree):
+#    sweep = datatree['/sweep_0'] # TODO: what if this sweep doesn't exist?
+#    start_range = sweep.ray_start_range.data[0]
+#    gate_spacing = sweep.ray_gate_spacing.data[0]
+#    ngates = sweep.ray_n_gates.data[0]
+#    return [start_range+gate_spacing*minimum_number_of_gates,
+#        start_range+gate_spacing*int(ngates/2), start_range+gate_spacing*ngates] 
 
 def map_range_to_index(max_range, rvals, gate_spacing, start_range):
     index = int((max_range - start_range)/gate_spacing)
@@ -245,45 +245,45 @@ def fetch_ray_field_data(path, file_name, sweep_number):
     return datatree_sweep
 
 # use with pn.pane.HoloViews
-def show_selected_file(file_name):
-    if len(file_name) <= 0:
-        if is_mdv:
-           height_initial_value = [0]
-        else:
-           height_initial_value = ['/sweep_8']
-        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=height_initial_value, field=['ZDR', 'DBZH', 'RHOHV'])
-    else:
-        if is_mdv:
-            # cartesian data set; use dataset structure
-            ds_cart = xr.open_dataset(file_name[0])
-            fields = get_field_names(ds_cart)
-            heights = np.arange(0,len(ds_cart.z0))  # [0,1,2,3] # ds_cart.z0.data # get_sweeps(ds_cart)
-            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
-                max_range=[100,200,300,400, 500, 600, 700],
-                beta=heights,  
-                field=fields)
-        else:
-            # polar data; use datatree structure
-            if is_cfradial:
-                datatree = xd.io.open_cfradial1_datatree(file_name[0])
-            else:
-                datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
-            fields = get_field_names(datatree)
-            sweeps = get_sweeps(datatree)
-            print(datatree.groups)
-            sweep_names = [name for name in datatree.groups if 'sweep' in name] 
-            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
-                max_range=get_ranges(datatree), # [100,200,300,400, 500, 600, 700], 
-                beta=sweep_names,  # datatree.groups,
-                field=fields) # , dtree=datatree)
-            # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
+#def show_selected_file(file_name):
+#    if len(file_name) <= 0:
+#        if is_mdv:
+#           height_initial_value = [0]
+#        else:
+#           height_initial_value = ['/sweep_8']
+#        return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[25000,30000], beta=height_initial_value, field=['ZDR', 'DBZH', 'RHOHV'])
+#    else:
+#        if is_mdv:
+#            # cartesian data set; use dataset structure
+#            ds_cart = xr.open_dataset(file_name[0])
+#            fields = get_field_names(ds_cart)
+#            heights = np.arange(0,len(ds_cart.z0))  # [0,1,2,3] # ds_cart.z0.data # get_sweeps(ds_cart)
+#            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
+#                max_range=[100,200,300,400, 500, 600, 700],
+#                beta=heights,  
+#                field=fields)
+#        else:
+#            # polar data; use datatree structure
+#            if is_cfradial:
+#                datatree = xd.io.open_cfradial1_datatree(file_name[0])
+#            else:
+#                datatree = xd.io.backends.nexrad_level2.open_nexradlevel2_datatree(file_name[0])
+#            fields = get_field_names(datatree)
+#            sweeps = get_sweeps(datatree)
+#            print(datatree.groups)
+#            sweep_names = [name for name in datatree.groups if 'sweep' in name] 
+#            return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(
+#                max_range=get_ranges(datatree), # [100,200,300,400, 500, 600, 700], 
+#                beta=sweep_names,  # datatree.groups,
+#                field=fields) # , dtree=datatree)
+#            # return hv.DynamicMap(waves_image, kdims=['max_range', 'beta', 'field']).redim.values(max_range=[1,2,3], beta=[0.1, 1.0, 2.5], field=fields) # , dtree=datatree)
 
 
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
 
-print('result of get_field_names: ', get_field_names(datatree)) 
+# print('result of get_field_names: ', get_field_names(datatree)) 
 
 def onclick(event):
     print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
@@ -297,10 +297,11 @@ def find_nearest_index(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def get_field_data_blah(field_name='ZDR', theta=50.0, selected_sweep='\sweep_1'):
+# selected_sweep is a datatree!
+def get_field_data_blah(selected_sweep, field_name='ZDR', theta=50.0):
     print("first line of get_field_data")
     float(theta)
-    sweep = datatree[selected_sweep]
+    sweep = selected_sweep
     print("field_name: ", field_name, theta)
     fieldvar = sweep[field_name]    # use datatree subsets! 
     azvals = sweep.azimuth
@@ -309,9 +310,9 @@ def get_field_data_blah(field_name='ZDR', theta=50.0, selected_sweep='\sweep_1')
     print("get_field_data: ", z[:5])
     return z
 
-def get_ranges():
-    sweep = datatree['/sweep_8']
-    return sweep.range.data
+# def get_ranges():
+#     sweep = datatree['/sweep_8']
+#     return sweep.range.data
 
 def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside green")
@@ -387,7 +388,7 @@ def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", f
 
 # working on datatree store ...
 def plot_data_scatter(selected_field, 
-    datatree2=datatree, 
+    datatree2, 
     max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside plot_data_scatter")
     # uses global datatree ...
@@ -522,11 +523,9 @@ params = [
 
 app.layout = html.Div([
 
-    dcc.Store(id={'type': 'storage', 'index': 'xyz'}),
-
-    # The memory store reverts to the default on every page refresh
-    dcc.Store(id={'type': 'storage', 'index': 'memory'}),
-
+    html.Div(
+        id='error-div' # your error message will be displayed here, if there is one
+    ),
     html.Div(
         className="app-header",
         children=[
@@ -594,8 +593,8 @@ app.layout = html.Div([
 
         html.Div([
             dcc.Dropdown(
-                field_names_8,
-                field_names_8[0],
+                options=['REF','ZDR'],
+                value='REF',
                 id='field-selector',
                 multi=True,
                 style={'width': '50%'},
@@ -666,14 +665,14 @@ app.layout = html.Div([
 #        ),
 #-->
 
-def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
-    print("inside green-blue")
-    # data = data or {'tree': 0}
-    scatter_plot = plot_data_scatter(selected_field, 
-       # data.get('tree'), 
-       max_range, beta, field, is_mdv)
-    print('**** done with polar 2 ***')
-    return scatter_plot
+#def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
+#    print("inside green-blue")
+#    # data = data or {'tree': 0}
+#    scatter_plot = plot_data_scatter(selected_field, 
+#       # data.get('tree'), 
+#       max_range, beta, field, is_mdv)
+#    print('**** done with polar 2 ***')
+#    return scatter_plot
 
 # callbacks for click centering spreadsheet data
 @callback(
@@ -684,9 +683,12 @@ def plot_data(selected_field, max_range=100, beta="sweep_x", field='ZDR', is_mdv
     Input({"type": "polar-image", "index": ALL}, "clickData"),
     Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
     State('height-selector', 'value'),
+    State('file-selection', 'value'),
+    State('file-url-selector', 'value'),
     prevent_initial_call=True,
 )
-def display_click_data(clickDataList, selected_field, selected_sweep):
+def display_click_data(clickDataList, selected_field, selected_sweep_name,
+    file_name, path):
     print(">>>> selected_field: ", selected_field)
     print("clickDataList: ", clickDataList)
     if selected_field.count(None) == len(selected_field) or clickDataList.count(None) == len(clickDataList):
@@ -705,6 +707,9 @@ def display_click_data(clickDataList, selected_field, selected_sweep):
 
     field_az = selected_field_name + " " + str(np.round(theta, decimals=2))
 
+    fullpath = os.path.join(path, file_name)
+    datatree_sweep = fetch_ray_field_data(path, file_name, selected_sweep_name)
+
 # changes must be in this format ...
 #            columns=(
 #                [{'id': 'spreadsheet2', 'name': 'Range'}] +
@@ -721,7 +726,7 @@ def display_click_data(clickDataList, selected_field, selected_sweep):
 #                dict(Model=i, **{param: 0 for param in params})
 #                for i in range(1, 5)
 #            ],  
-    ranges = get_ranges()
+    ranges = datatree_sweep.range.data
     # array[start:stop:step]
     corresponding_range_index = find_nearest_index(ranges, range)
     print("corresponding_range_index: ", corresponding_range_index)
@@ -732,7 +737,7 @@ def display_click_data(clickDataList, selected_field, selected_sweep):
     range_stop = 100
     range_step = ranges[1] - ranges[0] 
     print("before get_field_data")
-    field_data = get_field_data_blah(selected_field_name, theta, selected_sweep)
+    field_data = get_field_data_blah(datatree_sweep, selected_field_name, theta)
     print("after get_field_data")
 #    print("field_data: ", field_data[:5])
     data = [{ 'spreadsheet-range-column': ranges[i],    # (i*range_step)+range_start,
@@ -806,6 +811,7 @@ def file_selected_from_dropdown(filename, file_options, path, values
 
 
 @callback( 
+    Output('error-div', 'children'),
     Output(component_id='time-line-selector', component_property='max'),  
     # Output(component_id='time-line-selector', component_property='marks'),  
     Output('file-selection', 'options'),
@@ -815,6 +821,9 @@ def file_selected_from_dropdown(filename, file_options, path, values
     prevent_initial_call=True
 )              
 def open_file_folder(n_clicks, path):   # really, this is setup the time slider; not open_file
+    default_time_line_max = 0
+    default_file_options = ['select data file']
+    default_file_selection = 'select data file'
     file_list = [] # {}
     if os.path.isdir(path):
        # open folder and get list of files
@@ -834,6 +843,8 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
        field_names_8 = get_field_names(datatree)
     else:
        print("not a file or folder")   
+       return [html.B('THERE WAS AN ERROR PROCESSING THIS FILE - PLEASE REVIEW FORMATTING.'),
+          default_time_line_max, default_file_options, default_file_selection]
 
     file_list.sort()
 
@@ -853,7 +864,7 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
 #    return f'Output: {value}' 
 #   0, 10, step=None, marks={ 0: '0°F', 3: '3°F', 5: '5°F', 7.65: '7.65°F', 10: '10°F' }, value=5
     marks={i: ''  for i in range(len(file_list))},
-    return [len(file_list),  
+    return [None, len(file_list),  
        file_list,
        file_list[0],
     ]
@@ -908,7 +919,7 @@ def display_dropdowns(n_clicks, field_names):
     print(">>> n_clicks: ", n_clicks)
     # add new plot ONLY if n_clicks has changed; otherwise, this is just an update to the store
     patched_children = Patch()
-    use_these_field_names = field_names_8
+    use_these_field_names = ['REF','PHI'] # field_names_8
     if field_names:
        use_these_field_names = field_names
       
