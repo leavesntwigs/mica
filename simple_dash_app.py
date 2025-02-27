@@ -232,16 +232,39 @@ def show_selected_field(field, x):
 #        return f'Select a file to open'
 #    else:
 #        return f'You selected {file_name}'
-   
 
-def fetch_ray_field_data(path, file_name, sweep_number):
-    fullpath = os.path.join(path, file_name)
-    field_names, datatree = open_file(fullpath)
+# select folder -> update time line
+# select time line -> update sweep drop down
+#                  -> update field selections   
+#        ****          -> update all plots? then combine time line & sweep selection callbacks
+# select sweep -> update  all plots
+# select field -> update one plot
+
+
+def fetch_ray_field_data(path_file_name, sweep_number):
+    fullpath = path_file_name #   os.path.join(path, file_name)
+    # TODO: send the key (sweep) name to open the file.
+    field_names, datatree = open_file(fullpath)  #   <==== HERE Why is the sweep not found?
     key = sweep_number    # '/sweep_' + str(sweep_number)
     print("key: ", key)
+
+    # just debugging ...
+    sweeps = datatree.match("/sweep_*")
+    sweep_options = [s for s in sweeps]
+    print("sweep_options: ", sweep_options)
+    # end just debugging
+
     datatree_sweep = None
     if key in datatree:
-        datatree_sweep = datatree[key]
+        print("key found in datatree")
+        datatree_sweep = datatree['/'+key]
+        print("datatree_sweep ...", datatree_sweep)
+        if datatree_sweep == None:   # <== This may not be valid
+           print("jonesy: datatree_sweep == None")
+        else:
+           print("jonesy: datatree_sweep !== None")
+    else:
+        print("jonesy: no key found in datatree")
     return datatree_sweep
 
 # use with pn.pane.HoloViews
@@ -388,11 +411,12 @@ def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", f
 
 # working on datatree store ...
 def plot_data_scatter(selected_field, 
-    datatree2, 
+    datatree_sweep, 
     max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside plot_data_scatter")
-    # uses global datatree ...
-    sweep = datatree2['/sweep_8']
+    if datatree_sweep == None:
+        print("datatree_sweep is None") 
+    sweep = datatree_sweep
     rvals = sweep.range
     azvals = sweep.azimuth
     # Generate data in polar coordinates
@@ -537,38 +561,19 @@ app.layout = html.Div([
             dcc.Input(
                id='file-url-selector',
                type='text',
-               value='~/data/for_mica/nexrad/output/20240510',
+               value='/Users/brenda/data/PRECIP',
+               # value='~/data/for_mica/nexrad/output/20240510',
                style={'width': '50%'}
             ),
             html.Button('Open', id='open-file-folder'),
-            html.Div(
-               dcc.Dropdown(
-                  options=['select data file'],
-                  value='select data file',
-                  id='file-selection',
-               ),
-            ), 
         ],
-        style={'width': '30%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Textarea(
-               value='Sweep / Height',
-               style={'width': '30%'}
-            ),
-            dcc.Dropdown(
-               id='height-selector',
-               options=['1','2','3'],
-               value='1',
-               style={'width': '40%'}
-            )
-        ],
-        style={'width': '60%', 'display': 'inline-block'}),
+        style={'width': '40%', 'display': 'inline-block'}),
     ], style={
         'padding': '10px 5px'
     }),
    
     html.Div([
-        dcc.Slider(min=0, max=1, step=1, 
+        dcc.Slider(min=1, max=1, step=1, 
            # marks={i: ''  for i in range(1)},
            value=0, id='time-line-selector',
            # marks=marks,
@@ -581,9 +586,45 @@ app.layout = html.Div([
     }),
 
     html.Div([
+        html.Div([
+            html.Div(
+               dcc.Textarea(
+                  # options=['select data file'],
+                  value='selected data file',
+                  id='file-selection',
+               ), 
+            ),
+            dcc.Store(
+                  # options=['select data file'],
+                  #value='select data file',
+                  id='data-files-store', 
+            ),
+            dcc.Store(    
+                  id='current-data-file',
+            ),
+        ], 
+        style={'width': '60%', 'display': 'inline-block'}),
+        html.Div([
+            dcc.Textarea( 
+               value='Sweep / Height',
+               style={'width': '30%'}
+            ),
+            dcc.Dropdown(
+               id='height-selector',
+               options=['1','2','3'],
+               value='1',
+               style={'width': '40%'}
+            )
+        ],
+        style={'width': '40%', 'display': 'inline-block'}),
+    ], style={
+        'padding': '10px 5px'
+    }),
+
+    html.Div([
         html.Button("Add Plot", id="add-plot-btn", n_clicks=0),
         html.Div(id="dropdown-container-div", children=[]),
-        html.Div(id="dropdown-container-output-div"),
+        # html.Div(id="dropdown-container-output-div"),
     ]),
 
     html.Div([
@@ -681,14 +722,15 @@ app.layout = html.Div([
     # Input('polar-2-3', 'clickData'), 
     # Input('field-selection-2-3', 'value'),
     Input({"type": "polar-image", "index": ALL}, "clickData"),
-    Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
     State('height-selector', 'value'),
-    State('file-selection', 'value'),
-    State('file-url-selector', 'value'),
+    State('current-data-file', 'data'),
+    # State('file-selection', 'value'),
+    # State('file-url-selector', 'value'),
     prevent_initial_call=True,
 )
 def display_click_data(clickDataList, selected_field, selected_sweep_name,
-    file_name, path):
+    path_file_name):
     print(">>>> selected_field: ", selected_field)
     print("clickDataList: ", clickDataList)
     if selected_field.count(None) == len(selected_field) or clickDataList.count(None) == len(clickDataList):
@@ -707,8 +749,8 @@ def display_click_data(clickDataList, selected_field, selected_sweep_name,
 
     field_az = selected_field_name + " " + str(np.round(theta, decimals=2))
 
-    fullpath = os.path.join(path, file_name)
-    datatree_sweep = fetch_ray_field_data(path, file_name, selected_sweep_name)
+    fullpath = path_file_name # os.path.join(path, file_name)
+    datatree_sweep = fetch_ray_field_data(path_file_name, selected_sweep_name)
 
 # changes must be in this format ...
 #            columns=(
@@ -749,38 +791,58 @@ def display_click_data(clickDataList, selected_field, selected_sweep_name,
     ]
     return columns, data
 
-# TODO: if time line selected, then update the file-selection to select that file
-# then open file and update images and height selections.
-#@callback( 
-#    Output(component_id='time-line', component_property='children'),  
-#    Output('file-selection', 'children'),
+# TODO: if new file selected using the time line, 
+# then update the file-selection to reflect the selection
+# changing the file-selection will trigger an update of the plots
+# use unobserve to prevent an infinite update loop
+# or widgets.link((a, 'value'), (b, 'value'), (update_one, update_one))
+# @callback( 
+#    Output('file-selection', 'value'),
 #    Input('time-line-selector', 'value'),
-#    State('file-url-selector', 'value'),
+#    State('file-selection', 'value'),
 #    prevent_initial_call=True
 #) 
-#def file_selected(file_index, path):
+##def file_selected(file_index, path):
+#def on_a_change(value, value2):
+#    if value-1 == value2:
+#       return no_update
+#    else:
+#       return value-1  # file selection list is zero based
+#    # b.unobserve(on_b_change, names='value')
+#    # b.value = change['new'] + 1
+#    # b.observe(on_b_change, names='value')
 
-# if file selected from dropdown, update time line,
-# then open file
+# if file selected from time line,
+# then open file; update sweeps; update field selections
 @callback(
-    Output('time-line-selector', 'value'),
+    Output('current-data-file', 'data'),
+    Output('file-selection', 'value'),  # TODO: make this a text field; use time line ONLY to select files
     # pattern match on all plots; need to send nclicks number of list elements
-    # Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
-    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+#    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+#    Output({"type": "city-filter-dropdown", "index": ALL}, "value"),
     # Output({"type": "polar-image", "index": ALL}, "children"),
     # Output({'type': 'storage', 'index': 'memory'}, 'data'),
     Output('field-names-current', 'data'),
     Output('height-selector', 'options'),
-    Input('file-selection', 'value'),
-    State('file-selection', 'options'),
+    Output('height-selector', 'value'),
+    # Input('file-selection', 'value'),
+    Input('time-line-selector', 'value'),
+    State('data-files-store', 'data'),
+    # State('file-selection', 'value'),
+    State('time-line-selector', 'value'),
     State('file-url-selector', 'value'),
     # State({'type': 'storage', 'index': 'memory'}, 'data'),
-    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
+#    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    State('height-selector', 'value'),
     prevent_initial_call=True
 )
-def file_selected_from_dropdown(filename, file_options, path, values
-    #  data
+def file_selected_from_dropdown(time_line_index, file_options,
+    time_line_index_current,  path,  # values,
+    selected_sweep,
     ):
+    # if time_line_index == time_line_index_current:
+    #    return no_update
+    filename = file_options[time_line_index-1] # 1-based indexing; zero filenumber doesn't make sense
     print("path: ", path, " filename: ", filename)
     fullpath = os.path.join(path, filename)
     field_names, datatree = open_file(fullpath)
@@ -791,21 +853,49 @@ def file_selected_from_dropdown(filename, file_options, path, values
     sweep_options = [s for s in sweeps]
     print("sweep_options: ", sweep_options)
     # field_names = [["NYC", "MTL", "LA", "TOKYO"], ["orange", "blue"]]
-    index = file_options.index(filename)
-    # data['tree'] = datatree
-    print("after datatree assigned")
-    # original_children = Patch()
-    # 
-    # this works, but if a new plot is added afterward, the field names revert to the default names
-    # somehow need to update the field_names store along with the stored datatree.
-    # use dcc.Store
-    # 
-    options_for_all = [field_names for i in enumerate(values)]
+    
+    # options_for_all = [field_names for i in enumerate(values)]
     # list comprehension to update field names
 
+    if not selected_sweep in sweep_options:
+       selected_sweep = None 
     # return index, patched_children, # data
-    return index, options_for_all, field_names, sweep_options
+    # just update the selected sweep to trigger field selection updates
+    #return fullpath, filename, options_for_all, field_names, sweep_options, selected_sweep
+    return fullpath, filename, field_names, sweep_options, selected_sweep
 
+@callback(
+    # pattern match on all plots; need to send nclicks number of list elements
+    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+#    Output({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    Input('field-names-current', 'data'),
+    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    prevent_initial_call=True
+)
+def update_field_selections_all_plots(field_names, all_plots
+    ):   
+    options_for_all = [field_names for i in enumerate(all_plots)]
+    # list comprehension to update field names
+    return options_for_all
+
+
+# new sweep / height selected
+# just trigger a cascade: an update to all the selected fields
+@callback(
+    # pattern match on all plots; need to send nclicks number of list elements
+    # Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+    Output({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    Input('height-selector', 'value'),
+    # State('data-files-store', 'data'),
+    # State('time-line-selector', 'value'),
+    # State('file-url-selector', 'value'),
+    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
+    prevent_initial_call=True
+)
+def new_sweep_selected(
+    selected_sweep, all_selected_fields,
+    ):   
+    return all_selected_fields
 
 # TODO: open file, update field selection dropdown, update images
 
@@ -814,8 +904,8 @@ def file_selected_from_dropdown(filename, file_options, path, values
     Output('error-div', 'children'),
     Output(component_id='time-line-selector', component_property='max'),  
     # Output(component_id='time-line-selector', component_property='marks'),  
-    Output('file-selection', 'options'),
-    Output('file-selection', 'value'),
+    Output('data-files-store', 'data'),
+    # Output('file-selection', 'value'),
     Input('open-file-folder', 'n_clicks'),
     State('file-url-selector', 'value'),
     prevent_initial_call=True
@@ -866,7 +956,7 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
     marks={i: ''  for i in range(len(file_list))},
     return [None, len(file_list),  
        file_list,
-       file_list[0],
+     #   file_list[0],
     ]
 
 #    return dcc.Slider(-5, 10, 1, value=-3, id='time-line-selector')
@@ -951,14 +1041,14 @@ def display_dropdowns(n_clicks, field_names):
     return patched_children
 
 
-@callback(
-    Output("dropdown-container-output-div", "children"),
-    Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
-)
-def display_output(values):
-    return html.Div(
-        [html.Div(f"Dropdown {i + 1} = {value}") for (i, value) in enumerate(values)]
-    )
+# @callback(
+#     Output("dropdown-container-output-div", "children"),
+#     Input({"type": "city-filter-dropdown", "index": ALL}, "value"),
+# )
+# def display_output(values):
+#     return html.Div(
+#         [html.Div(f"Dropdown {i + 1} = {value}") for (i, value) in enumerate(values)]
+#     )
 
 # new field selected
 # @callback(
@@ -981,36 +1071,158 @@ def display_output(values):
 
 # reconcile these two callbacks.  They overlap in the polar-image MATCH!!!
 # maybe just trigger the field selection widgets?
-# Working here ... 
+# tangerine 
 # new sweep / height selected
 #    update spreadsheet (store in State centered  range / az )
 #    update all plots
 @callback(
+    #Output('error-div', 'children'),
     Output({"type": "polar-image", "index": MATCH}, "figure"),
     # Output({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
-    Input('height-selector', 'value'),  # this triggers the callback
     Input({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
-    State('file-url-selector', 'value'),
-    State('file-selection', 'value'),
+    State('height-selector', 'value'),  # this triggers the callback
+    #State('file-url-selector', 'value'),
+    #State('file-selection', 'value'),
+    State('current-data-file', 'data'),
     # State({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
     prevent_initial_call=True
 )
-def update_all_plots(sweep_number, field, path, file_name):
+def update_all_plots(field, sweep_number, path_file_name):
+    print("field selected: ", field)
     if sweep_number == None:
-       return no_update
+       print("no sweep selected")
+       return no_update 
+    #   return [html.B('NO SWEEP SELECTED - PLEASE SELECT A SWEEP / HEIGHT.'),
+    #       no_update]
     # TODO: check that field exists in sweep
-    print("fred/url: ", path)
-    print("fred/file_name: ", file_name)
-    datatree_sweep = fetch_ray_field_data(path, file_name, sweep_number)
+    # print("fred/url: ", path)
+    print("file_name: ", path_file_name)
+    datatree_sweep = fetch_ray_field_data(path_file_name, sweep_number)
+#    if datatree_sweep == None:
+#       # return [html.B('THERE WAS AN ERROR PROCESSING THIS FILE - PLEASE REVIEW FORMATTING.'),
+#       #   no_update]
+#       print("no datatree found for sweep")
+#       return no_update 
     if field == None:
-       field = "ZDR"
+       # field = "ZDR" # TODO fix this up!!!
+       return no_update
     scatter_plot = plot_data_scatter(field,
        datatree_sweep,
        # max_range, beta, field, is_mdv
        )
     return scatter_plot
 
+# consider a cascade of events ...
+# select file -> open file -> update sweep dropdown: keep same selected value, or set to first sweep
+# sweep selection changes -> update all plots (for each field selected, if field not selected, select first field
+#                            check fields, if different from current field options, update fields, select first field.
 
+
+## working here 2/21/2025
+## SUPER-all-in-one-update function
+## if file selected from time line,
+## then open file; update sweeps; update field selections
+#@callback(
+#    Output({"type": "polar-image", "index": ALL}, "figure"),
+#    Output('current-data-file', 'data'),
+#    Output('file-selection', 'value'),  # TODO: make this a text field; use time line ONLY to select files
+#    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
+#    Output('field-names-current', 'data'),
+#    Output('height-selector', 'options'),  # line 826 duplicate/overlap
+#
+#    Input('time-line-selector', 'value'),
+#    Input('height-selector', 'value'),  # this triggers the callback
+#    # Input({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
+#    State('data-files-store', 'data'),
+#    State('file-url-selector', 'value'),
+#    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
+#    State('current-data-file', 'data'),
+#    prevent_initial_call=True
+#)
+## which one to use for field selector? ALL or MATCH??? if one field selected, then MATCH, 
+## if other triggers, use ALL
+#def update_all_plots(time_line_index, selected_sweep, #  selected_field,
+#    file_options, path, 
+#    all_selected_fields, path_file_name
+#    ):  
+#    # determine which input triggered 
+#    # dash.callback_context <== to distinquish the trigger
+#    widget_clicked = ctx.triggered_id 
+#    
+#    if widget_clicked == 'time-line-selector':
+#
+#       filename = file_options[time_line_index-1] # 1-based indexing; zero filenumber doesn't make sense
+#       print("path: ", path, " filename: ", filename)
+#       fullpath = os.path.join(path, filename)
+#       field_names, datatree = open_file(fullpath)
+#   #         options=[{"label": x, "value": x} for x in folders],
+#   #         value=folders[0],    
+#   
+#       sweeps = datatree.match("/sweep_*")
+#       sweep_options = [s for s in sweeps]
+#       print("sweep_options: ", sweep_options)
+#       values = all_selected_fields 
+#       options_for_all = [field_names for i in enumerate(values)]
+#       # list comprehension to update field names
+#       if selected_sweep == None or selected_sweep not in sweeps:
+#          print("no sweep selected")
+#          selected_sweep = "/sweep_0"
+#       datatree_sweep = datatree[selected_sweep] 
+#       #print("freddy/file_name: ", path_file_name)
+#       #datatree_sweep = fetch_ray_field_data(path_file_name, sweep_number)
+#       # update all figures ...
+#       figures = []
+#       for field in all_selected_fields:
+#          if field == None:
+#             field = field_names[0]
+#          scatter_plot = plot_data_scatter(field,
+#             datatree_sweep,
+#             # max_range, beta, field, is_mdv
+#             )
+#          figures.append(scatter_plot)
+# 
+#       return figures, fullpath, filename, options_for_all, field_names, sweep_options
+#    
+#    elif widget_clicked == 'height-selector':
+#       print("sweep changed: ", selected_sweep)
+#       print("freddy/file_name: ", path_file_name)
+#       datatree_sweep = fetch_ray_field_data(path_file_name, selected_sweep)
+#       # update all figures ...
+#       figures = []
+#       for field in all_selected_fields:
+#          if field == None:
+#             figures.append(no_update)
+#          else:
+#             scatter_plot = plot_data_scatter(field,
+#                datatree_sweep,
+#                # max_range, beta, field, is_mdv
+#                )
+#             figures.append(scatter_plot)
+#
+#       return figures, no_update, no_update, no_update, no_update, no_update
+#
+#    else:  # it must be a new field selected
+#       print("new field selected")
+#       if selected_sweep == None:
+#          print("no sweep selected")
+#          return no_update
+#       print("freddy/file_name: ", path_file_name)
+#       datatree_sweep = fetch_ray_field_data(path_file_name, selected_sweep)
+#       # update all figures ...
+#       figures = []
+#       for field in all_selected_fields:
+#          # TODO: how to determine which plot changed field?
+#          scatter_plot = plot_data_scatter(field,
+#             datatree_sweep,
+#             # max_range, beta, field, is_mdv
+#             )
+#          figures.append(scatter_plot)
+#
+#
+#       # update one figure ...
+#       return figures, no_update, no_update, no_update, no_update, no_update, no_update
+
+# HERE ===> changing sweeps changes the plots, but changing the file (time slider) does NOT change plot
 
 # this depends on new url, directory, file selected
 #@callback(
