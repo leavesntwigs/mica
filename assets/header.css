@@ -2,19 +2,61 @@
     height: 60px;
     line-height: 60px;
     border-bottom: thin lightgrey solid;
-    background-color: lightblue;
+    background-color: lightgrey;
+    text-align: center;
 }
 
 .app-header .app-header--title {
-    font-size: 22px;
+    font-size: 32px;
     padding-left: 5px;
+    /* align: center; */
 }
 
 body {
-    background-color: lightblue;
+    background-color: lightgrey;
 }
 
-.dropdown-container-div {
+.dropdown-container {
      height: 100%;
-     background-color: black;
+     width: 100%;
+     ! background-color: purple;
+}
+
+.Select-control {
+    background-color: rgb(211, 211, 211) !important;
+    color:black;
+  }
+  
+.Select-menu-outer {
+    background-color: rgb(0, 255, 0);
+    color: black;
+}
+
+.Select-value-label {
+    color: black !important;
+}
+
+
+.file-url {
+     font-size: 20px;
+     background-color: lightgrey;
+     border: none;
+     padding-left: 10px;
+}
+
+.info-text {
+     font-size: 20px;
+     background-color: lightgrey;
+     border: none;
+}
+
+.action-button {
+     font-size: 20px;
+     background-color: #0B6298;
+     color: white;
+     width: 100px;
+}
+
+.spreadsheet-entire {
+     background-color: rgb(211,211,211)  ! lightgrey;
 }

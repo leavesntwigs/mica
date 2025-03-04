@@ -557,15 +557,17 @@ app.layout = html.Div([
         ]
     ),
     html.Div([
-        html.Div([
+        html.Div(
+            children=[
+            html.Button('Open', id='open-file-folder', className="action-button"),
             dcc.Input(
+               className="file-url",
                id='file-url-selector',
                type='text',
                value='/Users/brenda/data/PRECIP',
                # value='~/data/for_mica/nexrad/output/20240510',
                style={'width': '50%'}
             ),
-            html.Button('Open', id='open-file-folder'),
         ],
         style={'width': '40%', 'display': 'inline-block'}),
     ], style={
@@ -589,9 +591,11 @@ app.layout = html.Div([
         html.Div([
             html.Div(
                dcc.Textarea(
+                  className="info-text",
                   # options=['select data file'],
-                  value='selected data file',
+                  value='',
                   id='file-selection',
+                  style={'width': '100%'}
                ), 
             ),
             dcc.Store(
@@ -603,26 +607,28 @@ app.layout = html.Div([
                   id='current-data-file',
             ),
         ], 
-        style={'width': '60%', 'display': 'inline-block'}),
+        style={'width': '70%', 'display': 'inline-block'}),
         html.Div([
             dcc.Textarea( 
                value='Sweep / Height',
-               style={'width': '30%'}
+               style={'width': '40%'},
+               className="info-text",
             ),
             dcc.Dropdown(
+               className="dropdown-container",
                id='height-selector',
                options=['1','2','3'],
                value='1',
-               style={'width': '40%'}
+               # style={'width': '40%'}
             )
         ],
-        style={'width': '40%', 'display': 'inline-block'}),
+        style={'width': '30%', 'display': 'inline-block'}),
     ], style={
         'padding': '10px 5px'
     }),
 
     html.Div([
-        html.Button("Add Plot", id="add-plot-btn", n_clicks=0),
+        html.Button("Add Plot", id="add-plot-btn", n_clicks=0, className="action-button"),
         html.Div(id="dropdown-container-div", children=[]),
         # html.Div(id="dropdown-container-output-div"),
     ]),
@@ -658,7 +664,7 @@ app.layout = html.Div([
                style={'width': '30%'}
             ),   
             dcc.Input(id='input-on-submit', type='text'),
-            html.Button('Run', id='run-script'),
+            html.Button('Run', id='run-script', className="action-button"),
             html.Div(id='container-button-basic',
                children='Enter a value and press submit'),
         ],   
