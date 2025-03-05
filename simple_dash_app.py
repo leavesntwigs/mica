@@ -466,15 +466,12 @@ def plot_data_scatter(selected_field,
 
     fig = go.Figure(data=
         go.Scatterpolar(
-            r = R.flatten(), # [0.5,1,2,2.5,3,4],
-            theta = Theta.flatten(), # [35,70,120,155,205,240],
-            # startangle=0,
-            # direction="counterclockwise",
+            r = R.flatten(), 
+            theta = Theta.flatten(),
             mode = 'markers',
             marker=dict(
                 size=5,
                 # set color to a numerical array 
-                # color='blue',
                 #color=Z_colors,
                 #color=['rgb(93, 164, 214)', 'rgb(255, 144, 14)',
                 #   'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
@@ -488,8 +485,6 @@ def plot_data_scatter(selected_field,
                 # colorscale= [[0, 'blue'], [0.5, 'green'], [1.0, 'red']],
                 cmin = -4, cmax = 20, # this OR cauto; still produces gradient colorscale
                 # cauto = True,           # this OR cmin & cmax; still produces gradient colorscale
-                # colorscale='viridis',
-                # autocolorscale
                 # cmax, cmid, cmin
                 symbol='square-x',
                 showscale=True,
@@ -629,7 +624,7 @@ app.layout = html.Div([
 
     html.Div([
         html.Button("Add Plot", id="add-plot-btn", n_clicks=0, className="action-button"),
-        html.Div(id="dropdown-container-div", children=[]),
+        html.Div(id="dropdown-container-div", className="plot-img", children=[]),
         # html.Div(id="dropdown-container-output-div"),
     ]),
 
@@ -638,16 +633,17 @@ app.layout = html.Div([
         # dcc.Store stores the intermediate value
         dcc.Store(id='field-names-current'),
 
-        html.Div([
-            dcc.Dropdown(
-                options=['REF','ZDR'],
-                value='REF',
-                id='field-selector',
-                multi=True,
-                style={'width': '50%'},
-            ),
-        ],
-        style={'width': '100%', 'display': 'inline-block'}),
+        # select fields to add to the spreadsheet
+        #html.Div([
+        #    dcc.Dropdown(
+        #        options=['REF','ZDR'],
+        #        value='REF',
+        #        id='field-selector',
+        #        multi=True,
+        #        style={'width': '50%'},
+        #    ),
+        #],
+        #style={'width': '100%', 'display': 'inline-block'}),
         html.Div([
             dcc.Dropdown(
                 ['unfold','delete','etc'],
@@ -685,6 +681,7 @@ app.layout = html.Div([
         style={'width': '100%', 'display': 'inline-block'}),
 
         dash_table.DataTable(
+            #style=,
             id='spreadsheet',
             columns=(
                 [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
@@ -1024,6 +1021,7 @@ def display_dropdowns(n_clicks, field_names):
         options=use_these_field_names,
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
+    layout = go.Layout(height=700, width=700) # these control the size of the image
     new_graph = dcc.Graph(
         id={"type": "polar-image", "index": n_clicks},
         figure=go.Figure(data=
@@ -1031,16 +1029,19 @@ def display_dropdowns(n_clicks, field_names):
               r = [0.5,1,2,2.5,3,4],
               theta = [35,70,120,155,205,240],
               mode = 'markers',
-           )),  
-        style={'height': '150%'}
+           ), layout = layout),  
+        style={'height': '100%'}
     )  
-
+    plot_width = str(np.round(50/(n_clicks+1)))+'%'
+    print("plot_width=  ", plot_width)
     # it must be html.Div(["a", "b", "c"]) not html.Div("a", "b", "c")
     # innerlist = patched_children[-1]
     # print("innerlist: ", innerlist)
     patched_children.append(
        html.Span(
-          [html.Div([new_dropdown, new_graph], style={'width': '33%', 'display': 'inline-block'}),])
+          [html.Div([new_dropdown, new_graph], style={
+             # 'width': '25%', 'height': '100%', 
+             'display': 'inline-block'}),])
     )
     # patched_children.append(new_dropdown)
     # patched_children.append(new_graph)
@@ -1122,121 +1123,6 @@ def update_all_plots(field, sweep_number, path_file_name):
 # select file -> open file -> update sweep dropdown: keep same selected value, or set to first sweep
 # sweep selection changes -> update all plots (for each field selected, if field not selected, select first field
 #                            check fields, if different from current field options, update fields, select first field.
-
-
-## working here 2/21/2025
-## SUPER-all-in-one-update function
-## if file selected from time line,
-## then open file; update sweeps; update field selections
-#@callback(
-#    Output({"type": "polar-image", "index": ALL}, "figure"),
-#    Output('current-data-file', 'data'),
-#    Output('file-selection', 'value'),  # TODO: make this a text field; use time line ONLY to select files
-#    Output({"type": "city-filter-dropdown", "index": ALL}, "options"),
-#    Output('field-names-current', 'data'),
-#    Output('height-selector', 'options'),  # line 826 duplicate/overlap
-#
-#    Input('time-line-selector', 'value'),
-#    Input('height-selector', 'value'),  # this triggers the callback
-#    # Input({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
-#    State('data-files-store', 'data'),
-#    State('file-url-selector', 'value'),
-#    State({"type": "city-filter-dropdown", "index": ALL}, "value"),
-#    State('current-data-file', 'data'),
-#    prevent_initial_call=True
-#)
-## which one to use for field selector? ALL or MATCH??? if one field selected, then MATCH, 
-## if other triggers, use ALL
-#def update_all_plots(time_line_index, selected_sweep, #  selected_field,
-#    file_options, path, 
-#    all_selected_fields, path_file_name
-#    ):  
-#    # determine which input triggered 
-#    # dash.callback_context <== to distinquish the trigger
-#    widget_clicked = ctx.triggered_id 
-#    
-#    if widget_clicked == 'time-line-selector':
-#
-#       filename = file_options[time_line_index-1] # 1-based indexing; zero filenumber doesn't make sense
-#       print("path: ", path, " filename: ", filename)
-#       fullpath = os.path.join(path, filename)
-#       field_names, datatree = open_file(fullpath)
-#   #         options=[{"label": x, "value": x} for x in folders],
-#   #         value=folders[0],    
-#   
-#       sweeps = datatree.match("/sweep_*")
-#       sweep_options = [s for s in sweeps]
-#       print("sweep_options: ", sweep_options)
-#       values = all_selected_fields 
-#       options_for_all = [field_names for i in enumerate(values)]
-#       # list comprehension to update field names
-#       if selected_sweep == None or selected_sweep not in sweeps:
-#          print("no sweep selected")
-#          selected_sweep = "/sweep_0"
-#       datatree_sweep = datatree[selected_sweep] 
-#       #print("freddy/file_name: ", path_file_name)
-#       #datatree_sweep = fetch_ray_field_data(path_file_name, sweep_number)
-#       # update all figures ...
-#       figures = []
-#       for field in all_selected_fields:
-#          if field == None:
-#             field = field_names[0]
-#          scatter_plot = plot_data_scatter(field,
-#             datatree_sweep,
-#             # max_range, beta, field, is_mdv
-#             )
-#          figures.append(scatter_plot)
-# 
-#       return figures, fullpath, filename, options_for_all, field_names, sweep_options
-#    
-#    elif widget_clicked == 'height-selector':
-#       print("sweep changed: ", selected_sweep)
-#       print("freddy/file_name: ", path_file_name)
-#       datatree_sweep = fetch_ray_field_data(path_file_name, selected_sweep)
-#       # update all figures ...
-#       figures = []
-#       for field in all_selected_fields:
-#          if field == None:
-#             figures.append(no_update)
-#          else:
-#             scatter_plot = plot_data_scatter(field,
-#                datatree_sweep,
-#                # max_range, beta, field, is_mdv
-#                )
-#             figures.append(scatter_plot)
-#
-#       return figures, no_update, no_update, no_update, no_update, no_update
-#
-#    else:  # it must be a new field selected
-#       print("new field selected")
-#       if selected_sweep == None:
-#          print("no sweep selected")
-#          return no_update
-#       print("freddy/file_name: ", path_file_name)
-#       datatree_sweep = fetch_ray_field_data(path_file_name, selected_sweep)
-#       # update all figures ...
-#       figures = []
-#       for field in all_selected_fields:
-#          # TODO: how to determine which plot changed field?
-#          scatter_plot = plot_data_scatter(field,
-#             datatree_sweep,
-#             # max_range, beta, field, is_mdv
-#             )
-#          figures.append(scatter_plot)
-#
-#
-#       # update one figure ...
-#       return figures, no_update, no_update, no_update, no_update, no_update, no_update
-
-# HERE ===> changing sweeps changes the plots, but changing the file (time slider) does NOT change plot
-
-# this depends on new url, directory, file selected
-#@callback(
-#    Output(),
-#    Input('time-line-selector', 'value'),
-#)
-#def time_line_selection_changed():
-
 
 #
 #@callback(
