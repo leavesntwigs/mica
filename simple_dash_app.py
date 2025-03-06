@@ -691,7 +691,9 @@ app.layout = html.Div([
                 dict(Model=i, **{param: 0 for param in params})
                 for i in range(1, 5)
             ],
-            editable=True
+            editable=False,
+            column_selectable='multi',
+            selected_columns=[],
         ),
     ], style={
         'padding': '10px 5px'
@@ -763,7 +765,7 @@ def display_click_data(clickDataList, selected_field, selected_sweep_name,
 
     columns = (
        [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
-       [{'id': 'spreadsheet-field-1-column', 'name': field_az}]
+       [{'id': 'spreadsheet-field-1-column', 'name': field_az, 'selectable': True}]
     )
 
 # changes must be in this format ... 
@@ -1171,6 +1173,17 @@ def update_all_plots(field, sweep_number, path_file_name):
 #       'spreadsheet-field-1-column': i*3,
 #       } for i in range(5)
 #    ]
+
+@callback(
+    Output('spreadsheet', 'style_data_conditional'),
+    Input('spreadsheet', 'selected_columns')
+)
+def update_styles(selected_columns):
+    print("selected_columns=", selected_columns)
+    return [{
+        'if': { 'column_id': i },
+        'background_color': '#D2F3FF'
+    } for i in selected_columns]
 
 #
 ## Create interactivity between dropdown component and graph
