@@ -36,90 +36,99 @@ is_cfradial = True
 is_mdv = False
 
 
-# TODO: make a separate module/package for this ...
+# separate module/package for color scales ...
 # then, make it available like this ...
 # from colormapf import color_conversion_base, etc.
+import colormap_fetch
 # 
-import matplotlib.colors as colors
-from matplotlib.colors import to_rgb
+#import matplotlib.colors as colors
+#from matplotlib.colors import to_rgb
+#
+## TODO: need a Settings widget to:
+##  pick the the location of the lrose-display/color_scales location
+##
+#
+## use something like this ...
+## colormap_fetch.get_colormap(name)
+#
+#color_conversion_base = "/Users/brenda/git/mica"
+#file_name = "x11_colors_map.txt"
+#conversion_file = color_conversion_base + "/" + file_name
+#x11_color_name_map = {}  # it is a dictionary
+## read the color name to hex conversion file
+#f = open(conversion_file, "r")
+#for line in f.readlines():
+#    x = line.split()
+#    x11_color_name_map[x[0]]=x[1]
+#
+#def normalize_colormap(edges, colors):
+#    nsteps = int(edges[-1] - edges[0] + 1)
+#    new_edges = np.linspace(edges[0], edges[-1], nsteps)
+#    new_colors = []
+#    for i in range(0, len(edges)-1):
+#        for ii in range(int(edges[i]), int(edges[i+1])):
+#            new_colors.append(colors[i])
+#    return (new_edges, new_colors)
 
-color_conversion_base = "/Users/brenda/git/mica"
-file_name = "x11_colors_map.txt"
-conversion_file = color_conversion_base + "/" + file_name
-x11_color_name_map = {}  # it is a dictionary
-# read the color name to hex conversion file
-f = open(conversion_file, "r")
-for line in f.readlines():
-    x = line.split()
-    x11_color_name_map[x[0]]=x[1]
-
-def normalize_colormap(edges, colors):
-    nsteps = int(edges[-1] - edges[0] + 1)
-    new_edges = np.linspace(edges[0], edges[-1], nsteps)
-    new_colors = []
-    for i in range(0, len(edges)-1):
-        for ii in range(int(edges[i]), int(edges[i+1])):
-            new_colors.append(colors[i])
-    return (new_edges, new_colors)
-
-color_scale_base = "/Users/brenda/git/lrose-displays/color_scales"
-file_name = "zdr_color"
-color_scale_file = color_scale_base + "/" + file_name
-color_names = []
-edges = []
-# read the color map file
-f = open(color_scale_file, "r")
-for line in f.readlines():
-    if line[0] != '#':
-        # print(line)
-        x = line.split()
-        # print(x)
-        if len(x) == 3:
-            color_names.append(x[2].lower())
-            if len(edges) == 0:
-                edges.append(float(x[0]))
-            edges.append(float(x[1]))
-# add the ending edge
-# display(color_names)
-# display(edges)
-# convert the X11 color names to hex
-color_scale_hex = []
-for cname in color_names:
-    if cname in x11_color_name_map:
-        color_scale_hex.append(x11_color_name_map[cname]) 
-    else:
-        color_scale_hex.append(colors.to_hex(cname))
-
-# convert color names to rgb
-#rgb_color = to_rgb("dodgerblue")
-# define color map (matplotlib.colors.ListedColormap)
-try:
-    gg = 3
-    norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
-    norm.autoscale(edges)
-# TODO: the edges are NOT uniform the everything steps by 1 except the last goes 12 to 20
-    (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
-except ValueError as err:
-    print("something went wrong first: ", err)
+## TODO: these are global variables ... make them local to fetch_color
+#color_scale_base = "/Users/brenda/git/lrose-displays/color_scales"
+#file_name = "zdr_color"
+#color_scale_file = color_scale_base + "/" + file_name
+#color_names = []
+#edges = []
+## read the color map file
+#f = open(color_scale_file, "r")
+#for line in f.readlines():
+#    if line[0] != '#':
+#        # print(line)
+#        x = line.split()
+#        # print(x)
+#        if len(x) == 3:
+#            color_names.append(x[2].lower())
+#            if len(edges) == 0:
+#                edges.append(float(x[0]))
+#            edges.append(float(x[1]))
+## add the ending edge
+## display(color_names)
+## display(edges)
+## convert the X11 color names to hex
+#color_scale_hex = []
+#for cname in color_names:
+#    if cname in x11_color_name_map:
+#        color_scale_hex.append(x11_color_name_map[cname]) 
+#    else:
+#        color_scale_hex.append(colors.to_hex(cname))
+#
+## convert color names to rgb
+##rgb_color = to_rgb("dodgerblue")
+## define color map (matplotlib.colors.ListedColormap)
+#try:
+#    gg = 3
+#    norm = colors.BoundaryNorm(boundaries=edges, ncolors=len(color_names))
+#    norm.autoscale(edges)
+## TODO: the edges are NOT uniform the everything steps by 1 except the last goes 12 to 20
+#    (zcmap, znorm) = colors.from_levels_and_colors(edges, color_scale_hex, extend='neither')
+#except ValueError as err:
+#    print("something went wrong first: ", err)
 
 
-#                colorscale=[(0.00, "red"),   (0.33, "red"),
-#                    (0.33, "green"), (0.66, "green"),
-#                    (0.66, "blue"),  (1.00, "blue")],
-# color_scale_hex:  ['#483d8b', '#000080', '#0000ff', '#0000cd', '#87ceeb', '#006400', '#228b22', '#9acd32', '#bebebe', '#f5deb3', '#ffd700', '#ffff00', '#ff7f50', '#ffa500', '#c71585', '#ff4500', '#ff0000']
-# edges:  [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 20.0]
-def convert_to_go_colorscale(edges, colors_hex):
-    colorscale=[]
-    max = edges[-1]
-    min = edges[0]
-    edge_range = np.abs(max-min)
-    for i in range(len(edges)-1):
-       low = (edges[i]-min)/edge_range
-       high = (edges[i+1]-min)/edge_range
-       c = colors_hex[i]
-       colorscale.append((low, c))
-       colorscale.append((high, c))
-    return colorscale 
+##                colorscale=[(0.00, "red"),   (0.33, "red"),
+##                    (0.33, "green"), (0.66, "green"),
+##                    (0.66, "blue"),  (1.00, "blue")],
+## color_scale_hex:  ['#483d8b', '#000080', '#0000ff', '#0000cd', '#87ceeb', '#006400', '#228b22', '#9acd32', '#bebebe', '#f5deb3', '#ffd700', '#ffff00', '#ff7f50', '#ffa500', '#c71585', '#ff4500', '#ff0000']
+## edges:  [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 20.0]
+#def convert_to_go_colorscale(edges, colors_hex):
+#    colorscale=[]
+#    max = edges[-1]
+#    min = edges[0]
+#    edge_range = np.abs(max-min)
+#    for i in range(len(edges)-1):
+#       low = (edges[i]-min)/edge_range
+#       high = (edges[i+1]-min)/edge_range
+#       c = colors_hex[i]
+#       colorscale.append((low, c))
+#       colorscale.append((high, c))
+#    return colorscale 
     
 
 # use for cartesian data
@@ -374,7 +383,7 @@ def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", f
     # return  hv.QuadMesh((R, Theta, Z)).options(projection='polar', cmap='seismic',)
     #  Create a polar plot
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
+    (edges_norm, colors_norm) = colormap_fetch.normalize_colormap(edges, color_scale_hex)
     cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
     # Plot the quadmesh
     #            (X(column), Y(row), Z(row,column))
@@ -410,7 +419,8 @@ def plot_data_polly(selected_field, datatree40, max_range=100, beta="sweep_x", f
     return fig_bar_matplotlib2
 
 # working on datatree store ...
-def plot_data_scatter(selected_field, 
+def plot_data_scatter(selected_field,
+    color_scale_name, 
     datatree_sweep, 
     max_range=100, beta="sweep_x", field='ZDR', is_mdv=True):
     print("inside plot_data_scatter")
@@ -453,13 +463,15 @@ def plot_data_scatter(selected_field,
             z_bin_sort[new_z_index] = z[i]
         Z = np.nan_to_num(z_bin_sort, nan=-32)
 
-    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
-    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
-    print("color_scale_hex: ", color_scale_hex)
-    print("edges: ", edges)
-    print("colors_norm: ", colors_norm)
-    print("edges_norm: ", edges_norm)
-    colorscale_for_go = convert_to_go_colorscale(edges, color_scale_hex)
+    colorscale_for_go = colormap_fetch.fetch(color_scale_name)
+    # edges, color_scale_hex = colormap_fetch.fetch_lrose_displays_color_scale(color_scale_name)
+    # (edges_norm, colors_norm) = colormap_fetch.normalize_colormap(edges, color_scale_hex)
+    # cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    # print("color_scale_hex: ", color_scale_hex)
+    # print("edges: ", edges)
+    # print("colors_norm: ", colors_norm)
+    # print("edges_norm: ", edges_norm)
+    # colorscale_for_go = colormap_fetch.convert_to_go_colorscale(edges, color_scale_hex)
     print("colorscale_for_go: ", colorscale_for_go)
     
     #  Create a polar plot
@@ -502,8 +514,8 @@ def plot_data_scatter(selected_field,
     )    
     fig.update_layout(clickmode='event+select')
 
-    (edges_norm, colors_norm) = normalize_colormap(edges, color_scale_hex)
-    cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
+    #(edges_norm, colors_norm) = colormap_fetch.normalize_colormap(edges, color_scale_hex)
+#     cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
 #    psm = ax.pcolormesh(Theta, R, Z,
 #        cmap=cmap,
 #        vmin=edges_norm[0], vmax=edges_norm[-1],
@@ -633,6 +645,9 @@ app.layout = html.Div([
         # dcc.Store stores the intermediate value
         dcc.Store(id='field-names-current'),
 
+        # dcc.Store stores flag if spreadsheet has been edited 
+        dcc.Store(id='local-edits-spreadsheet'),
+
         # select fields to add to the spreadsheet
         #html.Div([
         #    dcc.Dropdown(
@@ -653,18 +668,19 @@ app.layout = html.Div([
             ),
         ],
         style={'width': '100%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Textarea(
-               id='scripts',
-               value='scripts',
-               style={'width': '30%'}
-            ),   
-            dcc.Input(id='input-on-submit', type='text'),
-            html.Button('Run', id='run-script', className="action-button"),
-            html.Div(id='container-button-basic',
-               children='Enter a value and press submit'),
-        ],   
-        style={'width': '25%', 'display': 'inline-block'}),
+        # commenting section for scripts
+        # html.Div([
+        #     dcc.Textarea(
+        #        id='scripts',
+        #        value='scripts',
+        #        style={'width': '30%'}
+        #     ),   
+        #     # dcc.Input(id='input-on-submit', type='text'),
+        #     # html.Button('Run', id='run-script', className="action-button"),
+        #     # html.Div(id='container-button-basic',
+        #     #    children='Enter a value and press submit'),
+        # ],   
+        # style={'width': '25%', 'display': 'inline-block'}),
         html.Div([
             dcc.Textarea(
                id='number-of-rays-display-text',
@@ -679,7 +695,7 @@ app.layout = html.Div([
             ),
         ],
         style={'width': '100%', 'display': 'inline-block'}),
-
+        html.Button('Save', id='save-spreadsheet-edits', className="action-button"),
         dash_table.DataTable(
             #style=,
             id='spreadsheet',
@@ -970,30 +986,30 @@ def open_file_folder(n_clicks, path):   # really, this is setup the time slider;
 #        n_clicks
 #    )
 
-@callback(
-    Output('container-button-basic', 'children'),
-    Input('run-script', 'n_clicks'),
-    State('input-on-submit', 'value'),
-    prevent_initial_call=True
-)
-def update_output(n_clicks, value):
-    # Run the command and capture the output
-    #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
-    # needs absolute path to lrose, or lrose must be in the environment variable PATH
-    try:
-       result = subprocess.run(["~/lrose/bin/RadxPrint", "-h"], capture_output=True, check=True,
-          text=True)
-       if result.returncode != 0:
-          print("result: ", result.returncode)
-       # Print the output
-       print(result.stdout)
-    except CalledProcessError as e:
-       print("Errors: ", e)
-
-    return 'The input value was "{}" and the button has been clicked {} times'.format(
-        value,
-        n_clicks
-    )
+#@callback(
+#    Output('container-button-basic', 'children'),
+#    Input('run-script', 'n_clicks'),
+#    State('input-on-submit', 'value'),
+#    prevent_initial_call=True
+#)
+#def update_output(n_clicks, value):
+#    # Run the command and capture the output
+#    #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+#    # needs absolute path to lrose, or lrose must be in the environment variable PATH
+#    try:
+#       result = subprocess.run(["~/lrose/bin/RadxPrint", "-h"], capture_output=True, check=True,
+#          text=True)
+#       if result.returncode != 0:
+#          print("result: ", result.returncode)
+#       # Print the output
+#       print(result.stdout)
+#    except CalledProcessError as e:
+#       print("Errors: ", e)
+#
+#    return 'The input value was "{}" and the button has been clicked {} times'.format(
+#        value,
+#        n_clicks
+#    )
 
 # working with patches and ALL ...
 # two cases:
@@ -1023,6 +1039,12 @@ def display_dropdowns(n_clicks, field_names):
         options=use_these_field_names,
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
+    colormap_selection = dcc.Dropdown(
+        options=["zdr_color", "vidiris", "lrose-display", "matplotlib"],
+        # options=use_these_field_names,
+        id={"type": "color-map-dropdown", "index": n_clicks},
+        value="zdr_color",
+    )
     layout = go.Layout(height=700, width=700) # these control the size of the image
     new_graph = dcc.Graph(
         id={"type": "polar-image", "index": n_clicks},
@@ -1041,7 +1063,7 @@ def display_dropdowns(n_clicks, field_names):
     # print("innerlist: ", innerlist)
     patched_children.append(
        html.Span(
-          [html.Div([new_dropdown, new_graph], style={
+          [html.Div([new_dropdown, colormap_selection,  new_graph], style={
              # 'width': '25%', 'height': '100%', 
              'display': 'inline-block'}),])
     )
@@ -1089,6 +1111,7 @@ def display_dropdowns(n_clicks, field_names):
     Output({"type": "polar-image", "index": MATCH}, "figure"),
     # Output({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
     Input({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
+    Input({'type': 'color-map-dropdown', 'index': MATCH}, 'value'), 
     State('height-selector', 'value'),  # this triggers the callback
     #State('file-url-selector', 'value'),
     #State('file-selection', 'value'),
@@ -1096,7 +1119,7 @@ def display_dropdowns(n_clicks, field_names):
     # State({'type': 'city-filter-dropdown', 'index': MATCH}, 'value'),
     prevent_initial_call=True
 )
-def update_all_plots(field, sweep_number, path_file_name):
+def update_all_plots(field, color_map_name, sweep_number, path_file_name):
     print("field selected: ", field)
     if sweep_number == None:
        print("no sweep selected")
@@ -1115,7 +1138,10 @@ def update_all_plots(field, sweep_number, path_file_name):
     if field == None:
        # field = "ZDR" # TODO fix this up!!!
        return no_update
+    # if color_map_name == None:
+    #    color_map_name = ******
     scatter_plot = plot_data_scatter(field,
+       color_map_name,
        datatree_sweep,
        # max_range, beta, field, is_mdv
        )
@@ -1174,16 +1200,112 @@ def update_all_plots(field, sweep_number, path_file_name):
 #       } for i in range(5)
 #    ]
 
+# highlight the selected column by changing the
+# colors in the style sheet
 @callback(
     Output('spreadsheet', 'style_data_conditional'),
-    Input('spreadsheet', 'selected_columns')
+    Input('spreadsheet', 'selected_columns'),
 )
 def update_styles(selected_columns):
-    print("selected_columns=", selected_columns)
     return [{
         'if': { 'column_id': i },
         'background_color': '#D2F3FF'
     } for i in selected_columns]
+
+# perform spreadsheet actions
+# will need this information:
+# file url / path filename
+# which sweep
+# start azimuth
+# end azimuth
+# start range
+# end range
+# list of fields
+# after edits are made, how to propagate changes to plots? 
+#  are the edits held in local state? NO  or written to a file? YES
+# Need to deal with change stack; if edits are made to current file, or all files.
+#  for now, just write edits to a temporary file. 
+#
+@callback(
+#     Output('spreadsheet', 'selected_columns'),
+    Input('spreadsheet', 'selected_columns'),
+    Input('actions-selector', 'value'),
+    State('spreadsheet', 'columns'),
+#    State('height-selector', 'value'),
+#    State('current-data-file', 'data'),
+)
+def update_styles(selected_columns, action, columns,
+#    selected_sweep_name, path_file_name
+    ):
+    print("selected_columns=", selected_columns)
+    print("action: ", action) 
+    # field_az = [s : for s in selected_columns]
+    #if action == "delete":
+    for i in columns:
+        print(i)
+        if i["id"] in selected_columns:
+            field_az = i["name"]
+            print("delete data for ", field_az)
+
+#  working here 3/10/2025
+#   sweep = fetch_ray_field_data(path_file_name, sweep_number)
+#   find the field
+# set the field to the missing value, for the az and range 
+# edits are kept in locally in spreadsheet; require a SAVE to move the local edits to the data file
+#   keep a state variable LOCAL_EDITS and check this before changing files, sweeps, etc.  
+# TODO: in spreadsheet display - set missing values to dash, "-"
+    
+#
+#  working here 3/7/2025
+## TODO: need to return new data for column
+#    return [{
+#        'if': { 'column_id': i },
+#        'background_color': '#D2F3FF'
+#    } for i in selected_columns]
+
+# Don't need to read the data file, just update the changes locally and keep in the spreadsheet
+# changes must be in this format ...
+#            columns=(
+#                [{'id': 'spreadsheet2', 'name': 'Range'}] +
+#                [{'id': p, 'name': p} for p in params]
+#            ),   
+
+#    columns = (
+#       [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
+#       [{'id': 'spreadsheet-field-1-column', 'name': field_az, 'selectable': True}]
+#    )    
+#
+## changes must be in this format ...  
+##            data=[
+##                dict(Model=i, **{param: 0 for param in params})
+##                for i in range(1, 5)
+##            ],   
+#    ranges = datatree_sweep.range.data
+#    # array[start:stop:step]
+#    corresponding_range_index = find_nearest_index(ranges, range)
+#    print("corresponding_range_index: ", corresponding_range_index)
+#    range_range = np.arange(corresponding_range_index-5, corresponding_range_index+5)
+#    print("range_range: ", range_range)
+#    print("ranges: ", ranges[:5])
+#    range_start = ranges[0] 
+#    range_stop = 100
+#    range_step = ranges[1] - ranges[0] 
+#    print("before get_field_data")
+#    field_data = get_field_data_blah(datatree_sweep, selected_field_name, theta)
+#    print("after get_field_data")
+##    print("field_data: ", field_data[:5])
+#    data = [{ 'spreadsheet-range-column': ranges[i],    # (i*range_step)+range_start,
+#       'spreadsheet-field-1-column': field_data[i],
+#       } for i in range_range # np.arange(corresponding_range_index-5, corresponding_range_index+5)
+#
+##   corresponding_range_index-5, ... corresponding_range_index+5
+#
+#    ]    
+#    return columns, data 
+#
+
+
+#
 
 #
 ## Create interactivity between dropdown component and graph
