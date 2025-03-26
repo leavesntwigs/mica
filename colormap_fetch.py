@@ -26,6 +26,17 @@ import numpy as np
 import matplotlib.colors as colors
 from matplotlib.colors import to_rgb
 
+# check if package is installed ...
+#import importlib.util
+
+# For illustrative purposes.
+#package_name = 'pandas'
+
+#spec = importlib.util.find_spec(package_name)
+#if spec is None:
+#    print(package_name +" is not installed")
+
+
 def to_rgb(v):
     return int(v*255)
 

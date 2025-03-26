@@ -1041,7 +1041,11 @@ def display_dropdowns(n_clicks, field_names):
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
     colormap_selection = dcc.Dropdown(
-        options=["zdr_color", "magma", "LangRainbow12", "HomeyerRainbow", "lrose-display", "matplotlib"],
+        options=["zdr_color",    # lrose-display color scale file name
+            "PiYG", "PRGn", "BrBG", "PuOr", "RdGy", "RdBu", "RdYlBu",
+            "RdYlGn", "Spectral", "coolwarm", "bwr", "seismic",
+            "berlin", "managua", "vanimo",        # diverging matplotlib colormaps
+            ],
         # options=use_these_field_names,
         id={"type": "color-map-dropdown", "index": n_clicks},
         value="zdr_color",
