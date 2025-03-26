@@ -463,6 +463,7 @@ def plot_data_scatter(selected_field,
             z_bin_sort[new_z_index] = z[i]
         Z = np.nan_to_num(z_bin_sort, nan=-32)
 
+    print("color_scale_name: ", color_scale_name)
     colorscale_for_go = colormap_fetch.fetch(color_scale_name)
     # edges, color_scale_hex = colormap_fetch.fetch_lrose_displays_color_scale(color_scale_name)
     # (edges_norm, colors_norm) = colormap_fetch.normalize_colormap(edges, color_scale_hex)
@@ -1040,7 +1041,7 @@ def display_dropdowns(n_clicks, field_names):
         id={"type": "city-filter-dropdown", "index": n_clicks},
     )
     colormap_selection = dcc.Dropdown(
-        options=["zdr_color", "vidiris", "lrose-display", "matplotlib"],
+        options=["zdr_color", "magma", "LangRainbow12", "HomeyerRainbow", "lrose-display", "matplotlib"],
         # options=use_these_field_names,
         id={"type": "color-map-dropdown", "index": n_clicks},
         value="zdr_color",
