@@ -649,60 +649,47 @@ app.layout = html.Div([
         # dcc.Store stores flag if spreadsheet has been edited 
         dcc.Store(id='local-edits-spreadsheet'),
 
-        # select fields to add to the spreadsheet
-        #html.Div([
-        #    dcc.Dropdown(
-        #        options=['REF','ZDR'],
-        #        value='REF',
-        #        id='field-selector',
-        #        multi=True,
-        #        style={'width': '50%'},
-        #    ),
-        #],
-        #style={'width': '100%', 'display': 'inline-block'}),
+        html.Div([
+            html.Button("+ Fold",     id="plus-fold-btn", n_clicks=0, className="action-button"),
+#            html.Button("+ Fold Ray", id="plus-fold-ray-btn", n_clicks=0, className="action-button"),
+#            html.Button("+ Fold Ray >", id="plus-fold-ray-toend-btn", n_clicks=0, className="action-button"),
+#            html.Button("+ Fold Range",       id="delete-btn", n_clicks=0, className="action-button"),
+#            html.Button("Delete",       id="delete-btn", n_clicks=0, className="action-button"),
+        ],
+        style={'width': '100%', 'display': 'table'}),
+#        html.Div([
+#            html.Button("- Fold",     id="minus-fold-btn", n_clicks=0, className="action-button"),
+#            html.Button("- Fold Ray", id="minus-fold-ray-btn", n_clicks=0, className="action-button"),
+#             html.Button("- Fold Ray >", id="minus-fold-ray-toend-btn", n_clicks=0, className="action-button"),
+#             html.Button("- Fold Range", id="minus-fold-range-btn", n_clicks=0, className="action-button"),
+#             html.Button("Delete Range", id="delete-range-btn", n_clicks=0, className="action-button"),
+#             html.Button("Zap Gnd Spd",  id="zap-gnd-spd-btn", n_clicks=0, className="action-button"),
+#             html.Button("- Aircraft Motion", id="minus-aircraft-motion-btn", n_clicks=0, className="action-button"),
+#             ],
+#             style={'width': '100%', 'display': 'table'}),
         html.Div([
             dcc.Dropdown(
-                ['unfold','delete','etc'],
-                'unfold',
-                id='actions-selector',
-                style={'width': '50%'},
+               # className="dropdown-container",
+               id='editing-columns-field-name',
+               options=['VEL','DBZ','REF'],
+               value='REF',
+               style={'width': '40%'}
             ),
-        ],
-        style={'width': '100%', 'display': 'inline-block'}),
-        # commenting section for scripts
-        # html.Div([
-        #     dcc.Textarea(
-        #        id='scripts',
-        #        value='scripts',
-        #        style={'width': '30%'}
-        #     ),   
-        #     # dcc.Input(id='input-on-submit', type='text'),
-        #     # html.Button('Run', id='run-script', className="action-button"),
-        #     # html.Div(id='container-button-basic',
-        #     #    children='Enter a value and press submit'),
-        # ],   
-        # style={'width': '25%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Textarea(
-               id='number-of-rays-display-text',
-               value='number of rays to display',
-               style={'width': '10%', 'display': 'inline-block'}
+            dcc.Input(
+                id='editing-columns-name',
+                placeholder='Enter an azimuth (degrees) ...',
+                value='',
+                style={'padding': 10}
             ),
-            dcc.Dropdown(
-                ['1','2','3','4'],
-                '1',
-                id='number-of-rays-selector',
-                style={'width': '20%', 'display': 'inline-block'},
-            ),
-        ],
-        style={'width': '100%', 'display': 'inline-block'}),
-        html.Button('Save', id='save-spreadsheet-edits', className="action-button"),
+            html.Button('Add Column', id='editing-columns-button', n_clicks=0, className="action-button")
+        ], style={'height': 50, 'display': 'inline'}),
+
         dash_table.DataTable(
             #style=,
             id='spreadsheet',
             columns=(
                 [{'id': 'spreadsheet-range-column', 'name': 'Range'}] +
-                [{'id': 'spreadsheet-field-1', 'name': 'VEL'}]
+                [{'id': 'spreadsheet-field-1', 'name': 'VEL', 'deletable':True}]
             ),
             data=[
                 dict(Model=i, **{param: 0 for param in params})
@@ -712,6 +699,8 @@ app.layout = html.Div([
             column_selectable='multi',
             selected_columns=[],
         ),
+        html.Button('Send to Plots', id='send-to-plots-btn', className="action-button"),
+        html.Button('Write to File', id='save-spreadsheet-edits-btn', className="action-button"),
     ], style={
         'padding': '10px 5px'
     }),
@@ -1234,7 +1223,7 @@ def update_styles(selected_columns):
 @callback(
 #     Output('spreadsheet', 'selected_columns'),
     Input('spreadsheet', 'selected_columns'),
-    Input('actions-selector', 'value'),
+    Input('plus-fold-btn', 'value'),
     State('spreadsheet', 'columns'),
 #    State('height-selector', 'value'),
 #    State('current-data-file', 'data'),
@@ -1251,6 +1240,25 @@ def update_styles(selected_columns, action, columns,
         if i["id"] in selected_columns:
             field_az = i["name"]
             print("delete data for ", field_az)
+
+@callback(
+    Output('spreadsheet', 'columns', allow_duplicate=True),
+    Input('editing-columns-button', 'n_clicks'),
+    State('editing-columns-field-name', 'value'),
+    State('editing-columns-name', 'value'),
+    State('spreadsheet', 'columns'),
+    prevent_initial_call='initial_duplicate'
+)
+def update_columns(n_clicks, field_name, azimuth_deg, existing_columns):
+    print("HERE !!!")
+    print("add column, n_clicks: ", n_clicks)
+    if n_clicks > 0:
+        field_name_az = field_name + "-" + str(azimuth_deg)
+        existing_columns.append({
+            'id': field_name_az, 'name': field_name + " " + str(azimuth_deg),
+            'renamable': True, 'deletable': True
+        })
+    return existing_columns
 
 #  working here 3/10/2025
 #   sweep = fetch_ray_field_data(path_file_name, sweep_number)

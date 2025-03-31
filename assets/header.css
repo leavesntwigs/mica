@@ -60,7 +60,8 @@ body {
      font-size: 20px;
      background-color: #0B6298;
      color: white;
-     width: 100px;
+     width: 200px;
+     padding: 10px 5px;
 }
 
 .spreadsheet-entire {
