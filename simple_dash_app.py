@@ -681,7 +681,7 @@ app.layout = html.Div([
                 value='',
                 style={'padding': 10}
             ),
-            html.Button('Add Column', id='editing-columns-button', n_clicks=0, className="action-button")
+            html.Button('Add Column', id='add-column-button', n_clicks=0, className="action-button")
         ], style={'height': 50, 'display': 'inline'}),
 
         dash_table.DataTable(
@@ -1201,10 +1201,13 @@ def update_all_plots(field, color_map_name, sweep_number, path_file_name):
     Input('spreadsheet', 'selected_columns'),
 )
 def update_styles(selected_columns):
-    return [{
-        'if': { 'column_id': i },
-        'background_color': '#D2F3FF'
-    } for i in selected_columns]
+    if selected_columns == None:
+        return no_update
+    else:
+        return [{
+            'if': { 'column_id': i },
+            'background_color': '#D2F3FF'
+        } for i in selected_columns]
 
 # perform spreadsheet actions
 # will need this information:
@@ -1221,42 +1224,43 @@ def update_styles(selected_columns):
 #  for now, just write edits to a temporary file. 
 #
 @callback(
-#     Output('spreadsheet', 'selected_columns'),
-    Input('spreadsheet', 'selected_columns'),
+    Output('spreadsheet', 'selected_columns'),
     Input('plus-fold-btn', 'value'),
+    State('spreadsheet', 'selected_columns'),
     State('spreadsheet', 'columns'),
 #    State('height-selector', 'value'),
 #    State('current-data-file', 'data'),
 )
-def update_styles(selected_columns, action, columns,
+def update_styles(action, selected_columns, columns,
 #    selected_sweep_name, path_file_name
     ):
     print("selected_columns=", selected_columns)
     print("action: ", action) 
     # field_az = [s : for s in selected_columns]
-    #if action == "delete":
     for i in columns:
         print(i)
         if i["id"] in selected_columns:
             field_az = i["name"]
-            print("delete data for ", field_az)
+            print("+unfold data for ", field_az)
 
 @callback(
     Output('spreadsheet', 'columns', allow_duplicate=True),
-    Input('editing-columns-button', 'n_clicks'),
+    Input('add-column-button', 'n_clicks'),
     State('editing-columns-field-name', 'value'),
     State('editing-columns-name', 'value'),
     State('spreadsheet', 'columns'),
     prevent_initial_call='initial_duplicate'
 )
 def update_columns(n_clicks, field_name, azimuth_deg, existing_columns):
-    print("HERE !!!")
+    if azimuth_deg == None:
+        azimuth_deg = "90"
+    print("HERE !!!", field_name, ", ", azimuth_deg)
     print("add column, n_clicks: ", n_clicks)
     if n_clicks > 0:
         field_name_az = field_name + "-" + str(azimuth_deg)
         existing_columns.append({
             'id': field_name_az, 'name': field_name + " " + str(azimuth_deg),
-            'renamable': True, 'deletable': True
+            'renamable': True, 'deletable': True, 'selectable': True
         })
     return existing_columns
 
