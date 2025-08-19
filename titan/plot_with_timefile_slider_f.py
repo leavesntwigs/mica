@@ -150,11 +150,18 @@ def plot_with_timefile_slider(z_step, path, df):
         )
         step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
         # step["args"][0]["visible"][i+1] = True  # Toggle i'th trace to "visible"
-        if (i % 2 == 1): 
-            step["args"][0]["visible"][i-1] = True  # Toggle i'th trace to "visible"
+        # if (i % 2 == 1): 
+        #    step["args"][0]["visible"][i-1] = True  # Toggle i'th trace to "visible"
         if i in map_trace_indexes:
             file_num = map_trace_indexes.index(i)
             step['label'] = filenames[file_num][13:19]
+            end_trace = i
+            if file_num > 0:
+                start_polygon_trace = map_trace_indexes[file_num-1]
+            else:
+                start_polygon_trace = 0
+            for j in range(start_polygon_trace,end_trace):
+                step["args"][0]["visible"][j] = True  # Toggle associated polygon traces to "visible"
             steps.append(step)
     
     sliders = [dict(
