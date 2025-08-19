@@ -93,7 +93,10 @@ def plot_with_timefile_slider(z_step, path, df):
     #            #x=np.arange(0, 10, 0.01),
     #            #y=np.sin(step * np.arange(0, 10, 0.01))
     #            ))
-    
+   
+    trace_count = 0
+    map_trace_indexes = []
+
     for step in range(0, len(filenames)):
         file = filenames[step]
         file_path = os.path.join(path, file) 
@@ -106,9 +109,11 @@ def plot_with_timefile_slider(z_step, path, df):
         #fig.add_trace(go.Scatter(x=[0,100,200,0], y=[0,200,0,0]))
         file_date_time = get_file_date_time(file)
         assoc_polys = associated[file_date_time]
-        p_idx = assoc_polys[0]
-        # make a list of concatenated polygons, separated by blank/plug
-        fig.add_trace(go.Scatter(x=df['polygon_x'][p_idx], y=df['polygon_y'][p_idx]))
+        for p_idx in assoc_polys:
+            # p_idx = assoc_polys[0]
+            # make a list of concatenated polygons, separated by blank/plug
+            fig.add_trace(go.Scatter(x=df['polygon_x'][p_idx], y=df['polygon_y'][p_idx]))
+            trace_count += 1
         fig.add_trace(
             go.Heatmap(
                 visible=False,
@@ -120,6 +125,9 @@ def plot_with_timefile_slider(z_step, path, df):
                 name="v = " + str(step),
                 zmin=-32, zmax=40,
                 ))
+        map_trace_indexes.append(trace_count)
+        trace_count += 1
+
         #fig.add_trace(time_fig, row=1, col=1, secondary_y=False)
     
     # Make 10th trace visible
@@ -127,7 +135,9 @@ def plot_with_timefile_slider(z_step, path, df):
     
     # to make image square 
     fig.update_layout(yaxis_scaleanchor="x")
-    
+   
+    print("map indexes: ", map_trace_indexes)
+ 
     # Create and add slider
     steps = []
     for i in range(len(fig.data)):
@@ -142,7 +152,10 @@ def plot_with_timefile_slider(z_step, path, df):
         # step["args"][0]["visible"][i+1] = True  # Toggle i'th trace to "visible"
         if (i % 2 == 1): 
             step["args"][0]["visible"][i-1] = True  # Toggle i'th trace to "visible"
-        steps.append(step)
+        if i in map_trace_indexes:
+            file_num = map_trace_indexes.index(i)
+            step['label'] = filenames[file_num][13:19]
+            steps.append(step)
     
     sliders = [dict(
         active=10,
