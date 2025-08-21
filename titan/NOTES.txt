@@ -1,0 +1,37 @@
+(base) eol-amalfi:AMS_41_radar brenda$ mamba create -n ams_41_shortcourse fsspec  pathlib xradar xradar s3fs
+
+Could not solve for environment specs
+The following package could not be installed
+└─ pyart does not exist (perhaps a typo or a missing channel).
+
+mamba activate ams_41_shortcourse
+
+
+
+----
+
+8/6/2025
+
+dtree1 = xd.io.open_odim_datatree(filename)
+
+
+8/11/2025
+
+mamba create -n ams_41_shortcourse fsspec  pathlib xradar  s3fs plotly dash pandas datetime numpy matplotlib seaborn cartopy shapely
+
+# from Anna's notebook ...
+import pandas as pd
+from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.dates as mdates
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from shapely.geometry import Polygon
+
+
+
+Titan output files are here:
+/Users/brenda/data/ams2025/titan/netcdf/Strathmore/titan_20240806.nc
+
