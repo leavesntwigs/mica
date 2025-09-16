@@ -42,7 +42,7 @@ def get_file_date_time(file_name):
 
 # df is a dataframe from TITAN ascii file that contains storm polygons
 # df['utc', 'polygon_x', 'polygon_y']
-def plot_with_timefile_slider(z_step, path, df):
+def plot_with_timefile_slider(z_step, path, df, df_complete):
 
 
     print(df.keys())
@@ -118,13 +118,17 @@ def plot_with_timefile_slider(z_step, path, df):
             go.Heatmap(
                 visible=False,
                 x=x, y=y,
-                z=np.nan_to_num(ds.VEL.data[0,z_step], nan=-32), 
+                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32), 
                 type='heatmap', 
                 # colorscale='Viridis',
                 #line=dict(color="#00CED1", width=6),
                 name="v = " + str(step),
                 zmin=-32, zmax=40,
                 ))
+        fig.add_trace(go.Scatter(x=df['VolCentroidX(km)'], y=df['VolCentroidY(km)'],mode='lines+markers'))
+        # df[(df["SimpleNum"] == 3)] 
+        #fig.add_trace(go.Scatter(x=[1,3], y=[4,2],
+        #    marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
         map_trace_indexes.append(trace_count)
         trace_count += 1
 

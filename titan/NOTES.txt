@@ -35,3 +35,55 @@ from shapely.geometry import Polygon
 Titan output files are here:
 /Users/brenda/data/ams2025/titan/netcdf/Strathmore/titan_20240806.nc
 
+
+Rview in python:
+In the fig, I need to turn on and off traces.  The traces would be 
+all storms
+centroids at time (x)
+ellipses at time (x)
+polygons at time (x)
+all polygons
+all ellipses
+all centroids
+all labels
+all traces prior to time(x)
+all traces after time(x)
+...
+
+Plus, the traces change colors depending on the time selected.
+
+Somehow, index the traces? So, do I load all the traces at once at initialization?
+Load the traces on demand? Hmmm, How to index the traces???
+
+Buttons as drop down menues:
+Tracks -> ??
+TType: Polygon, ellipse, centroid with lines
+Annotate: complex/simple, none, ??
+Past: ?
+Forecast: ?
+Future: ?
+Field: VEL, DBZ, etc. 
+Zoom: ??? (later).
+Help? 
+
+Read from:
+1) ASCII
+2) netCDF
+
+
+
+----
+
+
+>>> import build_helper_structures
+>>> df = ascii_to_df_int.ascii_to_df(file)
+Traceback (most recent call last):
+  File "<python-input-1>", line 1, in <module>
+    df = ascii_to_df_int.ascii_to_df(file)
+         ^^^^^^^^^^^^^^^
+NameError: name 'ascii_to_df_int' is not defined
+>>> import ascii_to_df_int
+>>> file = "/Users/brenda/data/ams2025/titan/ascii/Tracks2Ascii.derecho.txt"
+
+>>> df = ascii_to_df_int.ascii_to_df(file)
+>>> sts, ssi = build_helper_structures.build_helper_structures(df)
