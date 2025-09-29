@@ -157,9 +157,9 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         # format of coordinates: x|y=[current, child, None, current, child, None ...]
         #child_x, child_y = prepare_child_connections(df_complete, time_step_key, 'child')
         #parent_x, parent_y = prepare_parent_connections(df_complete, time_step_key, 'parent')
-        for (xs, ys) in all_storms_t1:
+        for (simple_num_s, xs, ys) in all_storms_t1:
             # fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
-            fig.add_trace(go.Scatter(x=xs, y=ys,
+            fig.add_trace(go.Scatter(x=xs, y=ys, text=str(simple_num_s), mode="text+lines+markers",
                 marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
             trace_count += 1
         map_trace_indexes.append(trace_count)

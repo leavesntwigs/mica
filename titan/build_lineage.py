@@ -145,6 +145,7 @@ def vol_centroid(storm_simple_num, df):
         linkage_x, linkage_y = zip(*l)
  
     # insert parent (x & y), linkage(x & y), None, None, to make segments
-    return linkage_x, linkage_y
+    # add the (simple_num, complex_num) 
+    return storm_simple_num, linkage_x, linkage_y
 
 
