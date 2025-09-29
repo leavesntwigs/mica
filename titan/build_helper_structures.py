@@ -37,7 +37,7 @@ def build_helper_structures(df):
     return d # storms_by_time_step, simple_storm_info
 
 
-# built structure looks like this ...
+# built storms_by_time structure looks like this ...
 #>>> d
 #{
 #Timestamp('2022-05-21 14:59:49+0000', tz='UTC'): ['0', '1', '2', '3'], 
@@ -79,4 +79,11 @@ def build_helper_structures(df):
 #Timestamp('2022-05-21 18:41:49+0000', tz='UTC'): ['184', '186', '187', '172'], 
 #Timestamp('2022-05-21 18:47:48+0000', tz='UTC'): ['189', '190', '191', '195', '196', '172'], 
 #Timestamp('2022-05-21 18:53:49+0000', tz='UTC'): ['191', '197', '199', '172']}
+
+
 #
+
+# child_x, child_y = prepare_child_connections(df_complete, time_step_key, 'child')
+#def prepare_child_connections(df_complete, time_step_key, 'child'):
+
+#    return child_x, child_y

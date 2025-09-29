@@ -6,6 +6,11 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
 import os
+import datetime
+import bhs
+import build_lineage
+
+from datetime import datetime, timezone
 
 def file_list(directory_path):
     files = []
@@ -69,12 +74,13 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         associated[poly_date_time].append(idx)
                 
     print(associated)        
+
+    # get the storms for each time step
+    sbts = bhs.build_helper_structures(df_complete)
     
     # Create figure
     fig = go.Figure()
     fig = make_subplots(rows=1, cols=1, shared_xaxes='all', shared_yaxes='all')
-    
-    
     
     # Add traces, one for each slider step
     #     storm traces are within each tenth (0-9 are for first time step
@@ -125,10 +131,26 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 name="v = " + str(step),
                 zmin=-32, zmax=40,
                 ))
-        fig.add_trace(go.Scatter(x=df['VolCentroidX(km)'], y=df['VolCentroidY(km)'],mode='lines+markers'))
+
+        time_step = datetime(int(file[4:8]),int(file[8:10]),int(file[10:12]),
+            int(file[13:15]),int(file[15:17]),int(file[17:19]),tzinfo=timezone.utc)
+        # >>> fns2.isoformat()
+        # '2022-05-21T15:05:50+00:00'
+
+        sbts_key = time_step.isoformat()
+        # '2011-11-04T00:05:23'   storms by time step (sbts) keys are this format
+        storm_simple_nums = sbts[sbts_key]
+        print("sbts_key: ", sbts_key, " storm_simple_nums: ", storm_simple_nums)
+
+        # add the storm tracks as arrows for this time step
+        # fig.add_trace(go.Scatter(x=df['VolCentroidX(km)'], y=df['VolCentroidY(km)'],mode='lines+markers'))
         # df[(df["SimpleNum"] == 3)] 
-        #fig.add_trace(go.Scatter(x=[1,3], y=[4,2],
-        #    marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
+        # use keyword None to break parents and children into segments
+        # format of coordinates: x|y=[current, child, None, current, child, None ...]
+        #child_x, child_y = prepare_child_connections(df_complete, time_step_key, 'child')
+        #parent_x, parent_y = prepare_parent_connections(df_complete, time_step_key, 'parent')
+        fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
+            marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
         map_trace_indexes.append(trace_count)
         trace_count += 1
 

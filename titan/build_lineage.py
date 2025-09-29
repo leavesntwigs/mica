@@ -35,23 +35,36 @@ def build_lineage(df_complete, storms_by_time, time_step_key, linkage='child'):
        
 
 # example usage ...
->>> storms_by_time = d
->>> time_step_key = '2022-05-21T15:05:50+00:00'
->>> storm_simpleNums = storms_by_time[time_step_key]
->>> storm_simpleNums
-['1', '4', '5', '6', '7']
->>> all_storms_t1 = [build_lineage.vol_centroid(s,df) for s in storm_simpleNums]
->>> all_storms_t1
-[
-	(('-191.613', -178.721, None), ('-138.109', -129.495, None)), 
-	(('-161.438', -155.47, None),  ('-113.328', -82.7222, None)), 
-	(('-191.546', -183.658, None, '-191.546', -200.502, None, '-191.546', -190.467, None, '-191.546', -182.469, None), ('-82.5627', -85.5091, None, '-82.5627', -83.8344, None, '-82.5627', -124.533, None, '-82.5627', -98.2481, None)), 
-	(('-176.74', -178.721, None), ('-131.12', -129.495, None)), 
-	(('-179.62', -183.658, None), ('-112.254', -85.5091, None))
-]
+#>>> storms_by_time = d
+#>>> time_step_key = '2022-05-21T15:05:50+00:00'
+#>>> storm_simpleNums = storms_by_time[time_step_key]
+#>>> storm_simpleNums
+#['1', '4', '5', '6', '7']
+#>>> all_storms_t1 = [build_lineage.vol_centroid(s,df) for s in storm_simpleNums]
+#>>> all_storms_t1
+#[
+#         x's    			y's
+#	(('-191.613', -178.721, None), ('-138.109', -129.495, None)), 
+#	(('-161.438', -155.47, None),  ('-113.328', -82.7222, None)), 
+#	(('-191.546', -183.658, None, '-191.546', -200.502, None, '-191.546', -190.467, None, '-191.546', -182.469, None), ('-82.5627', -85.5091, None, '-82.5627', -83.8344, None, '-82.5627', -124.533, None, '-82.5627', -98.2481, None)), 
+#	(('-176.74', -178.721, None), ('-131.12', -129.495, None)), 
+#	(('-179.62', -183.658, None), ('-112.254', -85.5091, None))
+#]
+#
+#TODO: what should this structure be? a dictionary{key: time, list of storms, [???
+#
+#dictionary { key: time, ((s#, c#), (parents), (children)) }  # parents & children are formatted x,y points ready for go.addtrace
+#parents/children = trace = (x's, y's)
+#x's/y's = (storm centroid_x, parent_centroid_x, None, storm_centroid_x, parent_centroid_x, None, ...)) 
+#TODO: associate the trace #'s with the time?  Do in plot function
+#
+#So, really, it is like a database with time and storm #'s as keys
+#The database tables could be data frames?
+#time_trace_table (time*, [trace #'s])
+#
+#time_lineage_segments_table (time*, 
 
-TODO: what should this structure be? a dictionary{key: time, list of storms, [???
- 
+
 
 #exploring ...
 #

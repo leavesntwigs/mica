@@ -32,7 +32,10 @@ def build_helper_structures(df):
         #simple_storm_info[ 
        
 
-    df.apply(lambda r: addit(r['date_utc'], r['SimpleNum']), axis = 1)    
+    #utc1 = r['date_utc']
+    #k1 = utc1.iloc[0].isoformat()
+    df.apply(lambda r: addit(r['date_utc'].isoformat(), r['SimpleNum']), axis = 1)    
+    # df.apply(lambda r: addit(r['date_utc'], r['SimpleNum']), axis = 1)    
 
     return d # storms_by_time_step, simple_storm_info
 
