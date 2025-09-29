@@ -100,6 +100,9 @@ def vol_centroid(storm_simple_num, df):
 
     #storm_df = df[df['SimpleNum'] == storms[0]][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
     storm_df = df[df['SimpleNum'] == storm_simple_num][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
+    print("storm_df: ")
+    print(storm_df)
+
     children = storm_df['children'].to_list()[0]
     parents = storm_df['parents'].to_list()[0]
     v_x = storm_df['VolCentroidX(km)'].to_list()[0]
@@ -135,8 +138,12 @@ def vol_centroid(storm_simple_num, df):
 
     l = lc + lp 
     #linkage_x + get_xy()   # [v_x, p_x, None]
-    linkage_x, linkage_y = zip(*l)
-
+    linkage_x = []
+    linkage_y = []
+    print("l = ", l)
+    if l:     # if not empty 
+        linkage_x, linkage_y = zip(*l)
+ 
     # insert parent (x & y), linkage(x & y), None, None, to make segments
     return linkage_x, linkage_y
 

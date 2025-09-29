@@ -114,12 +114,15 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
             # shared_xaxes='all', shared_yaxes='all') # [[{"secondary_y": True}]])
         #fig.add_trace(go.Scatter(x=[0,100,200,0], y=[0,200,0,0]))
         file_date_time = get_file_date_time(file)
-        assoc_polys = associated[file_date_time]
-        for p_idx in assoc_polys:
-            # p_idx = assoc_polys[0]
-            # make a list of concatenated polygons, separated by blank/plug
-            fig.add_trace(go.Scatter(x=df['polygon_x'][p_idx], y=df['polygon_y'][p_idx]))
-            trace_count += 1
+        include_polygons = False
+        if include_polygons:
+            assoc_polys = associated[file_date_time]
+            for p_idx in assoc_polys:
+                # p_idx = assoc_polys[0]
+                # make a list of concatenated polygons, separated by blank/plug
+                fig.add_trace(go.Scatter(x=df['polygon_x'][p_idx], y=df['polygon_y'][p_idx]))
+                trace_count += 1
+
         fig.add_trace(
             go.Heatmap(
                 visible=False,
@@ -131,6 +134,7 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 name="v = " + str(step),
                 zmin=-32, zmax=40,
                 ))
+        trace_count += 1
 
         time_step = datetime(int(file[4:8]),int(file[8:10]),int(file[10:12]),
             int(file[13:15]),int(file[15:17]),int(file[17:19]),tzinfo=timezone.utc)
@@ -139,8 +143,12 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
 
         sbts_key = time_step.isoformat()
         # '2011-11-04T00:05:23'   storms by time step (sbts) keys are this format
-        storm_simple_nums = sbts[sbts_key]
+        storm_simple_nums_str = sbts[sbts_key]
+        # storm_simple_nums = list(map(int, storm_simple_nums_str))
+        storm_simple_nums = storm_simple_nums_str
         print("sbts_key: ", sbts_key, " storm_simple_nums: ", storm_simple_nums)
+        
+        all_storms_t1 = [build_lineage.vol_centroid(s,df_complete) for s in storm_simple_nums]
 
         # add the storm tracks as arrows for this time step
         # fig.add_trace(go.Scatter(x=df['VolCentroidX(km)'], y=df['VolCentroidY(km)'],mode='lines+markers'))
@@ -149,10 +157,12 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         # format of coordinates: x|y=[current, child, None, current, child, None ...]
         #child_x, child_y = prepare_child_connections(df_complete, time_step_key, 'child')
         #parent_x, parent_y = prepare_parent_connections(df_complete, time_step_key, 'parent')
-        fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
-            marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
+        for (xs, ys) in all_storms_t1:
+            # fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
+            fig.add_trace(go.Scatter(x=xs, y=ys,
+                marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
+            trace_count += 1
         map_trace_indexes.append(trace_count)
-        trace_count += 1
 
         #fig.add_trace(time_fig, row=1, col=1, secondary_y=False)
     
@@ -182,11 +192,12 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
             file_num = map_trace_indexes.index(i)
             step['label'] = filenames[file_num][13:19]
             end_trace = i
+            # TODO: fix up the traces, there are more now, with the storm lineage
             if file_num > 0:
-                start_polygon_trace = map_trace_indexes[file_num-1]
+                start_polygon_trace = map_trace_indexes[file_num-1] + 1
             else:
-                start_polygon_trace = 0
-            for j in range(start_polygon_trace,end_trace):
+                start_polygon_trace = 1
+            for j in range(start_polygon_trace,end_trace+1):
                 step["args"][0]["visible"][j] = True  # Toggle associated polygon traces to "visible"
             steps.append(step)
     
