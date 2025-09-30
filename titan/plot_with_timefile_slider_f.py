@@ -1,3 +1,4 @@
+import os
 import plotly
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -5,10 +6,10 @@ import xradar as xd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import numpy as np
-import os
 import datetime
 import bhs
 import build_lineage
+import colormap_fetch
 
 from datetime import datetime, timezone
 
@@ -99,7 +100,9 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
     #            #x=np.arange(0, 10, 0.01),
     #            #y=np.sin(step * np.arange(0, 10, 0.01))
     #            ))
-   
+  
+    colorscale_for_go = colormap_fetch.fetch("dbz_color")
+ 
     trace_count = 0
     map_trace_indexes = []
 
@@ -130,9 +133,16 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32), 
                 type='heatmap', 
                 # colorscale='Viridis',
+                colorscale=colorscale_for_go,
+                #colorscale=[
+                #    [0,   'rgb(0,0,255)'],
+                #    [0.5, 'rgb(255,0,255)'],
+                #    [1,   'rgb(0,255,0)'],
+                #    ],
                 #line=dict(color="#00CED1", width=6),
                 name="v = " + str(step),
-                zmin=-32, zmax=40,
+                #zmin=-32, zmax=40,
+                zmin=-20, zmax=80,
                 ))
         trace_count += 1
 
@@ -160,7 +170,8 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         for (simple_num_s, xs, ys) in all_storms_t1:
             # fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
             fig.add_trace(go.Scatter(x=xs, y=ys, text=str(simple_num_s), mode="text+lines+markers",
-                marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous")))
+                marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous",
+                color="white")))
             trace_count += 1
         map_trace_indexes.append(trace_count)
 
