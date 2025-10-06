@@ -13,6 +13,56 @@ import colormap_fetch
 
 from datetime import datetime, timezone
 
+
+#color_scale_test = 
+    #[(0.00, "red"),   (0.33, "red"),
+     #(0.33, "green"), (0.66, "green"),
+     #(0.66, "blue"),  (1.00, "blue")]
+
+
+#    [
+#    (np.float64(0.0),  '#404040'),
+#    (np.float64(0.0), '#404040'),
+#   
+#    (np.float64(0.25), '#483d8b'),
+#    (np.float64(0.25), '#483d8b'),
+#   
+#    # (np.float64(0.3),  '#005a00'),
+#    # (np.float64(0.4),  '#005a00'),
+#   
+#    # (np.float64(0.4),  '#007000'),
+#    # (np.float64(0.5),  '#007000'),
+#   # 
+#    # (np.float64(0.5),  '#087fdb'),
+#    # (np.float64(0.55), '#087fdb'),
+#    # (np.float64(0.55), '#1c47e8'),
+#    # (np.float64(0.56), '#1c47e8'),
+#    # (np.float64(0.56), '#6e0dc6'),
+#    # (np.float64(0.59), '#6e0dc6'),
+#    # (np.float64(0.59), '#c80f86'),
+#    # (np.float64(0.62), '#c80f86'),
+#    # (np.float64(0.62), '#c06487'),
+#    # (np.float64(0.65), '#c06487'),
+#    # (np.float64(0.65), '#d2883b'),
+#    # (np.float64(0.68), '#d2883b'),
+#    # (np.float64(0.68), '#fac431'),
+#    # (np.float64(0.71), '#fac431'),
+#
+#    (np.float64(0.74), '#fefa03'),
+#    (np.float64(0.74), '#fefa03'),
+#
+#    # (np.float64(0.74), '#fe9a58'),
+#    # (np.float64(0.77), '#fe9a58'),
+#    # (np.float64(0.77), '#fe5f05'),
+#    # (np.float64(0.8),  '#fe5f05'),
+#    # (np.float64(0.8),  '#fd341c'),
+#    # (np.float64(0.85), '#fd341c'),
+#    # (np.float64(0.85), '#bebebe'),
+#    # (np.float64(0.9),  '#bebebe'),
+#    (np.float64(1.0),  '#d3d3d3'),
+#    (np.float64(1.0),  '#d3d3d3')]
+#
+
 def file_list(directory_path):
     files = []
     try:
@@ -102,6 +152,8 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
     #            ))
   
     colorscale_for_go = colormap_fetch.fetch("dbz_color")
+    colorscale_labels = ["-20","5","10","20","30","35","36","39","42","45","48","51","54","57","60","65","70"]
+    colorscale_ticks = [-20,5,10,20,30,35,36,39,42,45,48,51,54,57,60,65,70]
  
     trace_count = 0
     map_trace_indexes = []
@@ -126,11 +178,15 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 fig.add_trace(go.Scatter(x=df['polygon_x'][p_idx], y=df['polygon_y'][p_idx]))
                 trace_count += 1
 
+        min = -20
+        max = 80
+        #z_normalized = [(n-min)/(max-min) for n in np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32)]
         fig.add_trace(
             go.Heatmap(
                 visible=False,
                 x=x, y=y,
-                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32), 
+                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # TODO: z needs to be normalized to the (zmin,zmax) interval !!! 
+                #z=z_normalized,
                 type='heatmap', 
                 # colorscale='Viridis',
                 colorscale=colorscale_for_go,
@@ -140,10 +196,19 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 #    [1,   'rgb(0,255,0)'],
                 #    ],
                 #line=dict(color="#00CED1", width=6),
+                # create a discrete colorscale by setting the same reference point twice in a row
+                colorbar=dict(
+                    title='dBZ',
+                    # lineposition="through",
+                    tickvals=colorscale_ticks, # [0,40,80],  # in data coordinates
+                    ticktext=colorscale_labels,
+                    # lenmode="pixels", len=100,
+                ),
                 name="v = " + str(step),
                 #zmin=-32, zmax=40,
                 zmin=-20, zmax=80,
                 ))
+
         trace_count += 1
 
         time_step = datetime(int(file[4:8]),int(file[8:10]),int(file[10:12]),

@@ -65,7 +65,7 @@ def fetch_lrose_displays_color_scale(color_scale_name, color_scale_base_dir=None
             x = line.split()
             print(x)
             if len(x) >= 3:  # TODO sometimes the color name has multiple words!!! dark slate blue!!!
-                color_names.append(" ".join(x[2:]).lower())
+                color_names.append("".join(x[2:]).lower())
                 if len(edges) == 0:
                     edges.append(float(x[0]))
                 edges.append(float(x[1]))
@@ -107,6 +107,20 @@ def fetch_lrose_displays_color_scale(color_scale_name, color_scale_base_dir=None
 # color_scale_hex:  ['#483d8b', '#000080', '#0000ff', '#0000cd', '#87ceeb', '#006400', '#228b22', '#9acd32', '#bebebe', '#f5deb3', '#ffd700', '#ffff00', '#ff7f50', '#ffa500', '#c71585', '#ff4500', '#ff0000']
 # edges:  [-4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 20.0]
 # use for lrose-display and self-defined coloscales
+def convert_to_go_colorscale_old(edges, colors_hex):
+    colorscale=[]
+    max = edges[-1]
+    min = edges[0]
+    edge_range = np.abs(max-min)
+    print("max = ", max, " min = ", min, " edge_range = ", edge_range)
+    for i in range(len(edges)-1):
+       low = (edges[i]-min)/edge_range
+       high = (edges[i+1]-min)/edge_range
+       c = colors_hex[i]
+       colorscale.append((low, c))
+       colorscale.append((high, c))
+    return colorscale 
+
 def convert_to_go_colorscale(edges, colors_hex):
     colorscale=[]
     max = edges[-1]
@@ -120,6 +134,7 @@ def convert_to_go_colorscale(edges, colors_hex):
        colorscale.append((low, c))
        colorscale.append((high, c))
     return colorscale 
+    
     
 # example using matplotlib color maps ...
 def convert_to_go_colorscalei_matplotlib(color_scale_name):
