@@ -151,9 +151,10 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
     #            #y=np.sin(step * np.arange(0, 10, 0.01))
     #            ))
   
-    colorscale_for_go = colormap_fetch.fetch("dbz_color")
-    colorscale_labels = ["-20","5","10","20","30","35","36","39","42","45","48","51","54","57","60","65","70"]
-    colorscale_ticks = [-20,5,10,20,30,35,36,39,42,45,48,51,54,57,60,65,70]
+    colorscale_ticks, colorscale_for_go = colormap_fetch.fetch("dbz_color")
+    colorscale_labels = list(map(str, colorscale_ticks))  # make the ticks into labels for the color bar
+    # colorscale_labels = ["-20","5","10","20","30","35","36","39","42","45","48","51","54","57","60","65","70"]
+    # colorscale_ticks = [-20,5,10,20,30,35,36,39,42,45,48,51,54,57,60,65,70]
  
     trace_count = 0
     map_trace_indexes = []

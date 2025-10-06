@@ -219,13 +219,14 @@ def fetch(color_map_name):
     # (edges_norm, colors_norm) = colormap_fetch.normalize_colormap(edges, color_scale_hex)
     # cmap = colors.ListedColormap(colors_norm) # (color_scale_hex)
         # print("color_scale_hex: ", color_scale_hex)
-        # print("edges: ", edges)
+        print("edges: ", edges)
         # print("colors_norm: ", colors_norm)
         # print("edges_norm: ", edges_norm)
         colorscale_for_go = convert_to_go_colorscale(edges, color_scale_hex)
         print("color scale: ")
         print(colorscale_for_go)
-        return colorscale_for_go
+        colorscale_ticks = list(map(int, edges))
+        return colorscale_ticks, colorscale_for_go
 
     # otherwise, return error
 
