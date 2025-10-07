@@ -181,12 +181,14 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
 
         min = -20
         max = 80
+        z_made_up = np.full_like(ds.DBZ.data[0,z_step], 37)
         #z_normalized = [(n-min)/(max-min) for n in np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32)]
         fig.add_trace(
             go.Heatmap(
                 visible=False,
                 x=x, y=y,
-                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # TODO: z needs to be normalized to the (zmin,zmax) interval !!! 
+                z=z_made_up, # z needs to be between zmin and zmax
+                # z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
                 #z=z_normalized,
                 type='heatmap', 
                 # colorscale='Viridis',
@@ -224,7 +226,8 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         storm_simple_nums = storm_simple_nums_str
         print("sbts_key: ", sbts_key, " storm_simple_nums: ", storm_simple_nums)
         
-        all_storms_t1 = [build_lineage.vol_centroid(s,df_complete) for s in storm_simple_nums]
+        #all_storms_t1 = [build_lineage.vol_centroid(s,df_complete) for s in storm_simple_nums]
+        all_storms_t1 = [build_lineage.vol_centroid_w_labels(s,df_complete) for s in storm_simple_nums]
 
         # add the storm tracks as arrows for this time step
         # fig.add_trace(go.Scatter(x=df['VolCentroidX(km)'], y=df['VolCentroidY(km)'],mode='lines+markers'))
@@ -233,10 +236,16 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         # format of coordinates: x|y=[current, child, None, current, child, None ...]
         #child_x, child_y = prepare_child_connections(df_complete, time_step_key, 'child')
         #parent_x, parent_y = prepare_parent_connections(df_complete, time_step_key, 'parent')
-        for (simple_num_s, xs, ys) in all_storms_t1:
+        #for (simple_num_s, xs, ys) in all_storms_t1:
+        for (labels, xs, ys) in all_storms_t1:
             # fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
-            fig.add_trace(go.Scatter(x=xs, y=ys, text=str(simple_num_s), mode="text+lines+markers",
-                marker= dict(size=10,symbol= "arrow-bar-up", angleref="previous",
+            fig.add_trace(go.Scatter(x=xs, y=ys, 
+                #text=[str(simple_num_s),"end","dummy"], 
+                text=labels, 
+                #text=str(simple_num_s), 
+                mode="text+lines+markers",
+                textposition='top right', textfont=dict(color='#E58606', size=15),
+                marker= dict(size=15,symbol= "arrow-bar-up", angleref="previous",
                 color="white")))
             trace_count += 1
         map_trace_indexes.append(trace_count)

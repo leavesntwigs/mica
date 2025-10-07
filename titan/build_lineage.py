@@ -97,7 +97,6 @@ def build_lineage(df_complete, storms_by_time, time_step_key, linkage='child'):
 # *** start here ***
 def vol_centroid(storm_simple_num, df):
 
-
     #storm_df = df[df['SimpleNum'] == storms[0]][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
     storm_df = df[df['SimpleNum'] == storm_simple_num][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
     print("storm_df: ")
@@ -109,7 +108,6 @@ def vol_centroid(storm_simple_num, df):
     v_y = storm_df['VolCentroidY(km)'].to_list()[0]
 
     # ok, this becomes recursive ... we are performing the same operation on all children, all parents, and then appending to lists
-
 
     # storm_parents = df[df['SimpleNum'] == storms[0]]['parents']
 
@@ -148,4 +146,62 @@ def vol_centroid(storm_simple_num, df):
     # add the (simple_num, complex_num) 
     return storm_simple_num, linkage_x, linkage_y
 
+
+def vol_centroid_w_labels(storm_simple_num, df):
+
+    labels = [] # these are the labels for the arrows: [self, child, None, self, parent, ...]
+
+    #storm_df = df[df['SimpleNum'] == storms[0]][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
+    storm_df = df[df['SimpleNum'] == storm_simple_num][['children','parents','VolCentroidX(km)','VolCentroidY(km)']]
+    print("storm_df: ")
+    print(storm_df)
+
+    children = storm_df['children'].to_list()[0]
+    parents = storm_df['parents'].to_list()[0]
+    v_x = storm_df['VolCentroidX(km)'].to_list()[0]
+    v_y = storm_df['VolCentroidY(km)'].to_list()[0]
+
+    clabels = [(str(storm_simple_num), str(c), "")  for c in children]
+    plabels = [(str(p), str(storm_simple_num), "")  for p in parents]
+
+    labels = list(sum(clabels+plabels, ()))
+
+    # ok, this becomes recursive ... we are performing the same operation on all children, all parents, and then appending to lists
+
+    # storm_parents = df[df['SimpleNum'] == storms[0]]['parents']
+
+    # for each storm simple_num, get the centroid of the children
+    children_centroid_xy = [get_xy(s,df) for s in children]  # looks like [(vx,vy), (vx2,vy2) ...]
+
+    # for each storm simple_num, get the centroid of the parents
+    parents_centroid_xy = [get_xy(s,df) for s in parents]  # looks like [(vx,vy), (vx2,vy2) ...]
+
+    # format (storm_x, child1_x, None, storm_x, child2_x, None, ...)  same for parents and same for y
+    # where storm_x = (v_x, v_y), child1_x = (x,y), and None = (None, None)
+
+    lc = []
+    for p in children_centroid_xy:
+        #print("p: ", p)
+        lc.append((v_x, v_y))
+        lc.append(p)
+        lc.append((None,None))
+
+    lp = []
+    for p in parents_centroid_xy:
+        #print("p: ", p)
+        lp.append(p)
+        lp.append((v_x,v_y))
+        lp.append((None,None))
+
+    l = lc + lp
+    #linkage_x + get_xy()   # [v_x, p_x, None]
+    linkage_x = []
+    linkage_y = []
+    print("l = ", l)
+    if l:     # if not empty
+        linkage_x, linkage_y = zip(*l)
+
+    # insert parent (x & y), linkage(x & y), None, None, to make segments
+    # add the (simple_num, complex_num)
+    return labels, linkage_x, linkage_y
 
