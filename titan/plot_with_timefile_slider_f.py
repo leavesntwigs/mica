@@ -187,8 +187,8 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
             go.Heatmap(
                 visible=False,
                 x=x, y=y,
-                z=z_made_up, # z needs to be between zmin and zmax
-                # z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
+                #z=z_made_up, # z needs to be between zmin and zmax
+                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
                 #z=z_normalized,
                 type='heatmap', 
                 # colorscale='Viridis',
@@ -238,15 +238,29 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         #parent_x, parent_y = prepare_parent_connections(df_complete, time_step_key, 'parent')
         #for (simple_num_s, xs, ys) in all_storms_t1:
         for (labels, xs, ys) in all_storms_t1:
+            if len(labels) > 0:
+                name = labels[0]
+            else:
+                name = 'empty'
             # fig.add_trace(go.Scatter(x=[-100,100,None,-100,100], y=[-100,100,None,-100,-100],
             fig.add_trace(go.Scatter(x=xs, y=ys, 
                 #text=[str(simple_num_s),"end","dummy"], 
+                name=name,
                 text=labels, 
                 #text=str(simple_num_s), 
                 mode="text+lines+markers",
-                textposition='top right', textfont=dict(color='#E58606', size=15),
+                # textposition='top right', 
+                textfont=dict(color='white', size=15),
                 marker= dict(size=15,symbol= "arrow-bar-up", angleref="previous",
                 color="white")))
+            fig.update_layout(legend=dict(
+                title_text="Storm Simple Number",
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ))
             trace_count += 1
         map_trace_indexes.append(trace_count)
 
