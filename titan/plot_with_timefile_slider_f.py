@@ -182,13 +182,23 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
         min = -20
         max = 80
         z_made_up = np.full_like(ds.DBZ.data[0,z_step], 37)
+
+        z_max = np.max(ds.DBZ[0], axis=0, keepdims=True)
+        z = np.nan_to_num(z_max[0].data, nan=-20)
+
+        # z_mean = np.mean(ds.DBZ[0], axis=0, keepdims=True)
+        # z = np.nan_to_num(z_mean[0].data, nan=-20)
+  
         #z_normalized = [(n-min)/(max-min) for n in np.nan_to_num(ds.DBZ.data[0,z_step], nan=-32)]
         fig.add_trace(
             go.Heatmap(
                 visible=False,
                 x=x, y=y,
                 #z=z_made_up, # z needs to be between zmin and zmax
-                z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
+                # z=np.nan_to_num(ds.DBZ.data[0,z_step], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
+                # z_step of 4 in roughly the median height of the storm tracks.
+                # z=np.nan_to_num(ds.DBZ.data[0,4], nan=-20),   # z needs to be between (zmin,zmax) interval !!! 
+                z = z,
                 #z=z_normalized,
                 type='heatmap', 
                 # colorscale='Viridis',
