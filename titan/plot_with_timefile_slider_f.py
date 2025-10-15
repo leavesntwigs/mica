@@ -13,56 +13,6 @@ import colormap_fetch
 
 from datetime import datetime, timezone
 
-
-#color_scale_test = 
-    #[(0.00, "red"),   (0.33, "red"),
-     #(0.33, "green"), (0.66, "green"),
-     #(0.66, "blue"),  (1.00, "blue")]
-
-
-#    [
-#    (np.float64(0.0),  '#404040'),
-#    (np.float64(0.0), '#404040'),
-#   
-#    (np.float64(0.25), '#483d8b'),
-#    (np.float64(0.25), '#483d8b'),
-#   
-#    # (np.float64(0.3),  '#005a00'),
-#    # (np.float64(0.4),  '#005a00'),
-#   
-#    # (np.float64(0.4),  '#007000'),
-#    # (np.float64(0.5),  '#007000'),
-#   # 
-#    # (np.float64(0.5),  '#087fdb'),
-#    # (np.float64(0.55), '#087fdb'),
-#    # (np.float64(0.55), '#1c47e8'),
-#    # (np.float64(0.56), '#1c47e8'),
-#    # (np.float64(0.56), '#6e0dc6'),
-#    # (np.float64(0.59), '#6e0dc6'),
-#    # (np.float64(0.59), '#c80f86'),
-#    # (np.float64(0.62), '#c80f86'),
-#    # (np.float64(0.62), '#c06487'),
-#    # (np.float64(0.65), '#c06487'),
-#    # (np.float64(0.65), '#d2883b'),
-#    # (np.float64(0.68), '#d2883b'),
-#    # (np.float64(0.68), '#fac431'),
-#    # (np.float64(0.71), '#fac431'),
-#
-#    (np.float64(0.74), '#fefa03'),
-#    (np.float64(0.74), '#fefa03'),
-#
-#    # (np.float64(0.74), '#fe9a58'),
-#    # (np.float64(0.77), '#fe9a58'),
-#    # (np.float64(0.77), '#fe5f05'),
-#    # (np.float64(0.8),  '#fe5f05'),
-#    # (np.float64(0.8),  '#fd341c'),
-#    # (np.float64(0.85), '#fd341c'),
-#    # (np.float64(0.85), '#bebebe'),
-#    # (np.float64(0.9),  '#bebebe'),
-#    (np.float64(1.0),  '#d3d3d3'),
-#    (np.float64(1.0),  '#d3d3d3')]
-#
-
 def file_list(directory_path):
     files = []
     try:
@@ -85,13 +35,8 @@ def file_list(directory_path):
 
 # KingCity goes with derecho
 path = "/Users/brenda/data/ams2025/radar/cart/qc/KingCity/20220521"
-#ds = xr.open_dataset(filename)
-#z=np.nan_to_num(ds.VEL.data[0,17], nan=-32)
-# fig = go.Figure(data=go.Heatmap(z=z, type='heatmap', colorscale='Viridis'))
-# fig.show()
 
 z_step = 10
-
 
 def get_file_date_time(file_name):
     return file_name[4:19]
@@ -137,19 +82,6 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
     #     storm traces are within each tenth (0-9 are for first time step
     #        10 - 19 are all traces for the second file / time step   
     # 
-    
-    #for step in np.arange(0, 20, 1):
-    #    fig.add_trace(
-    #        go.Heatmap(
-    #            visible=False,
-    #            z=np.nan_to_num(ds.VEL.data[0,step], nan=-32), 
-    #            type='heatmap', 
-    #            colorscale='Viridis',
-    #            #line=dict(color="#00CED1", width=6),
-    #            name="v = " + str(step),
-    #            #x=np.arange(0, 10, 0.01),
-    #            #y=np.sin(step * np.arange(0, 10, 0.01))
-    #            ))
   
     colorscale_ticks, colorscale_for_go = colormap_fetch.fetch("dbz_color")
     colorscale_labels = list(map(str, colorscale_ticks))  # make the ticks into labels for the color bar
@@ -201,7 +133,6 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                 z = z,
                 #z=z_normalized,
                 type='heatmap', 
-                # colorscale='Viridis',
                 colorscale=colorscale_for_go,
                 #colorscale=[
                 #    [0,   'rgb(0,0,255)'],
@@ -218,7 +149,6 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
                     # lenmode="pixels", len=100,
                 ),
                 name="v = " + str(step),
-                #zmin=-32, zmax=40,
                 zmin=-20, zmax=80,
                 ))
 
@@ -295,14 +225,11 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
             #label=filenames[i][13:19]
         )
         step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
-        # step["args"][0]["visible"][i+1] = True  # Toggle i'th trace to "visible"
-        # if (i % 2 == 1): 
-        #    step["args"][0]["visible"][i-1] = True  # Toggle i'th trace to "visible"
         if i in map_trace_indexes:
             file_num = map_trace_indexes.index(i)
             step['label'] = filenames[file_num][13:19]
             end_trace = i
-            # TODO: fix up the traces, there are more now, with the storm lineage
+            # fix up the traces, there are more now, with the storm lineage
             if file_num > 0:
                 start_polygon_trace = map_trace_indexes[file_num-1] + 1
             else:
@@ -313,7 +240,7 @@ def plot_with_timefile_slider(z_step, path, df, df_complete):
     
     sliders = [dict(
         active=10,
-        currentvalue={"prefix": "time step: "},
+        currentvalue={"prefix": "time step (HHMMSS): "},
         pad={"t": 50},
         steps=steps
     )]
