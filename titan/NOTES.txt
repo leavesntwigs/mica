@@ -87,3 +87,17 @@ NameError: name 'ascii_to_df_int' is not defined
 
 >>> df = ascii_to_df_int.ascii_to_df(file)
 >>> sts, ssi = build_helper_structures.build_helper_structures(df)
+
+7/15/2026
+Notes on conda-forge packaging:
+Things to clean up and deal with:
+* color scales; directory; include color scale definitions as ascii files in package?
+* /Users/brenda paths? make them generic?
+* package, release and test
+       -> add a LICENSE file; copy from lrose-core?
+	- tar up the files and make a release on the github repo
+              $ tar -czf /tmp/titan_display.tar.gz  titan
+        - generate conda-forge package files
+              https://github.com/leavesntwigs/mica/releases/download/20260715/titan_display.tar.gz
+        - test build
+        - submit pull request for package??
